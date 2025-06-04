@@ -228,9 +228,8 @@ class EasyAIUI {
         const userInput = this.elements.messageInput?.value?.trim();
         if (!userInput || this.aiCore.isWaitingForAI) return;
 
-        // Add user message immediately
+        // Add user message immediately to UI
         this.addMessage('user', userInput);
-        this.aiCore.saveChatMessage('user', userInput);
         
         // Clear input and show loading state
         this.elements.messageInput.value = '';

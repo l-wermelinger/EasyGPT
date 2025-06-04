@@ -58,31 +58,31 @@ body {
 /* Header */
 .header {
     text-align: center;
-    padding: 20px 0;
-    margin-bottom: 20px;
+    padding: 15px 0;
+    margin-bottom: 15px;
     flex-shrink: 0;
 }
 
 .header h1 {
-    font-size: 2.5em;
+    font-size: 1.8em;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 10px;
 }
 
 .logo {
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
 }
 
 .header p {
     color: var(--text-secondary);
-    font-size: 1.1em;
+    font-size: 0.9em;
     opacity: 0.7;
 }
 
@@ -162,7 +162,7 @@ body {
     border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 4px;
 }
 
-/* Typing Animation */
+/* Typing Animation - Single unified animation */
 .message.typing .message-content::after {
     content: '●●●';
     animation: typing 1.5s infinite;
@@ -262,14 +262,13 @@ body {
     font-style: italic;
 }
 
-/* Input Area - Optimized */
+/* Input Area - Clean Design */
 .input-area {
     display: flex;
     gap: 12px;
     align-items: flex-end;
     padding: 20px;
     background: var(--background-primary);
-    border-top: 1px solid var(--border-light);
     flex-shrink: 0;
 }
 
@@ -278,7 +277,7 @@ body {
     min-height: 44px;
     max-height: 120px;
     padding: 12px 16px;
-    border: 2px solid var(--border-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-family: var(--font-family);
     font-size: 16px;
@@ -288,10 +287,12 @@ body {
     transition: border-color var(--transition-fast);
     background: var(--background-primary);
     color: var(--text-primary);
+    box-shadow: none;
 }
 
 .message-input:focus {
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color);
 }
 
 .message-input:disabled {

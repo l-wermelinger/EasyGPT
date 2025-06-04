@@ -391,6 +391,9 @@ class EasyAICore {
 
         this.isWaitingForAI = true;
         
+        // Save user message first
+        this.saveChatMessage('user', userInput);
+        
         try {
             // Build context message
             const messageWithContext = this.buildContextMessage(userInput);
@@ -425,7 +428,7 @@ class EasyAICore {
                 }
             }
 
-            // Final update and save
+            // Final update and save AI response
             if (aiResponseText.trim()) {
                 onStreamUpdate?.(aiResponseText, false, true); // Final update
                 this.saveChatMessage('ai', aiResponseText);
