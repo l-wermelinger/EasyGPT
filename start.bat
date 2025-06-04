@@ -11,7 +11,7 @@ echo.
 
 REM Define the HTML file to open
 set "HTML_FILE=index.html"
-set "BACKUP_FILE=src/index.html"
+set "BACKUP_FILE=index.html"
 
 echo.
 echo Checking for web server dependencies...

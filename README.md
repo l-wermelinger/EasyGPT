@@ -60,17 +60,18 @@ open http://localhost:8080
 EasyAI/
 ├── 📄 README.md                   # This file
 ├── 📄 LICENSE                     # MIT License
+├── 📄 .gitignore                  # Git ignore rules
+├── 🏠 index.html                  # Landing page (GitHub Pages main)
 ├── ⚙️ start.bat                   # Windows launcher
-├── 📁 src/
-│   ├── 🏠 index.html              # Landing page
+├── 📁 src/                        # Additional source files
 │   └── 💬 standalone-chat.html    # Chat application
-├── 📁 assets/
+├── 📁 assets/                     # Static assets
 │   ├── 🎬 Videoprojekt56789.mp4   # Demo video
 │   ├── 🔧 html5.svg               # HTML5 icon
 │   ├── 🎨 css.svg                 # CSS3 icon
 │   └── ⚡ javascript.svg          # JavaScript icon
-└── 📁 docs/
-    └── 📖 Additional documentation
+└── 📁 docs/                       # Documentation
+    └── 📖 STRUCTURE.md             # Project structure details
 ```
 
 ## 🛠️ Technology Stack
@@ -116,6 +117,8 @@ EasyAI/
    - Branch: main / root
 3. **Access your site**: `https://yourusername.github.io/EasyAI/`
 
+**GitHub Pages Structure**: The project is now optimized for GitHub Pages with the main landing page (`index.html`) in the root directory, ensuring immediate access without redirects.
+
 ### Netlify/Vercel
 
 1. **Connect your repository**
@@ -136,7 +139,7 @@ The included `start.bat` handles everything automatically:
 
 ### Modify Colors
 
-Edit the CSS custom properties in `src/index.html`:
+Edit the CSS custom properties in `index.html`:
 
 ```css
 :root {

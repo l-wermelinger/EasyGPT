@@ -11,10 +11,9 @@ EasyAI/
 ├── 📄 README.md                   # Main project documentation
 ├── 📄 LICENSE                     # MIT License
 ├── 📄 .gitignore                  # Git ignore rules
-├── 📄 index.html                  # Root redirect page
+├── 🏠 index.html                  # Landing page (GitHub Pages main)
 ├── ⚙️ start.bat                   # Windows launcher script
-├── 📁 src/                        # Source code
-│   ├── 🏠 index.html              # Landing/home page
+├── 📁 src/                        # Additional source files
 │   └── 💬 standalone-chat.html    # Chat application
 ├── 📁 assets/                     # Static assets
 │   ├── 🎬 Videoprojekt56789.mp4   # Demo video
@@ -32,17 +31,10 @@ EasyAI/
 - **`README.md`**: Comprehensive project documentation with installation, usage, and contribution guidelines
 - **`LICENSE`**: MIT license for open source usage
 - **`.gitignore`**: Ignores system files, IDE files, and temporary files
-- **`index.html`**: Simple redirect page that forwards to `src/index.html`
+- **`index.html`**: Main landing page with professional design, hero section, video mockup, and technology showcase
 - **`start.bat`**: Automated Windows launcher that detects and starts appropriate web server
 
 ### Source Code (`src/`)
-
-- **`index.html`**: 
-  - Landing page with professional design
-  - Hero section with video mockup
-  - Technology showcase with custom icons
-  - Black background mockup area
-  - Scroll-based video autoplay functionality
 
 - **`standalone-chat.html`**: 
   - Full AI chat application
@@ -86,18 +78,16 @@ EasyAI/
 ## File Relationships
 
 ```
-index.html (root)
-    ↓ redirects to
-src/index.html
+index.html (root - main landing page)
     ↓ links to
-src/standalone-chat.html
+src/standalone-chat.html (chat application)
     ↓ uses assets from
 assets/[video, icons]
 ```
 
 ## Development Workflow
 
-1. **Landing Page**: Edit `src/index.html` for homepage changes
+1. **Landing Page**: Edit `index.html` for homepage changes
 2. **Chat App**: Modify `src/standalone-chat.html` for chat functionality
 3. **Assets**: Add new media files to `assets/` folder
 4. **Documentation**: Update docs in `docs/` folder
@@ -106,9 +96,9 @@ assets/[video, icons]
 ## Path References
 
 When referencing assets from source files:
+- From root `index.html` to `assets/`: Use `assets/filename`
 - From `src/` to `assets/`: Use `../assets/filename`
 - From root to `src/`: Use `src/filename`
-- From root to `assets/`: Use `assets/filename`
 
 ## Best Practices
 
