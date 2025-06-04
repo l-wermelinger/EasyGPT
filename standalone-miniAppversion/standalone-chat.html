@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyAI - Standalone Chat</title>
+    <script src="https://js.puter.com/v2/"></script>
+    <!-- Markdown-it library for proper OpenAI response formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+            color: black;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            color: black;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+            opacity: 0.4;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            display: none;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 16px 20px;
+            border-radius: 8px;
+            line-height: 1.6;
+            font-size: 16px;
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: black;
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: black;
+            border: 1px solid #ddd;
+        }
+
+        /* Markdown formatting styles for GPT-4o responses */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            margin: 16px 0 8px 0;
+            font-weight: 600;
+            line-height: 1.3;
+            color: black;
+        }
+
+        .message-content h1 { font-size: 1.8em; }
+        .message-content h2 { font-size: 1.5em; }
+        .message-content h3 { font-size: 1.3em; }
+        .message-content h4 { font-size: 1.1em; }
+
+        .message-content p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .message-content strong {
+            font-weight: 600;
+            color: black;
+        }
+
+        .message-content em {
+            font-style: italic;
+            color: #333;
+        }
+
+        .message-content code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: black;
+            border: 1px solid #ddd;
+        }
+
+        .message-content pre {
+            background: #f5f5f5;
+            border: 1px solid black;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .message-content pre code {
+            background: transparent;
+            padding: 0;
+            color: black;
+            border: none;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 4px 0;
+            line-height: 1.5;
+        }
+
+        .message-content ul li {
+            list-style-type: disc;
+        }
+
+        .message-content ol li {
+            list-style-type: decimal;
+        }
+
+        .message-content a {
+            color: #333;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .message-content a:hover {
+            color: black;
+        }
+
+        .message-content blockquote {
+            border-left: 3px solid black;
+            padding-left: 12px;
+            margin: 12px 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid black;
+            margin: 16px 0;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            max-width: 80%;
+            margin-bottom: 20px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #FF8C00;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); opacity: 0.7; }
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 15px 20px;
+            background: white;
+            border: 1px solid #ddd;
+            color: black;
+            font-size: 16px;
+            outline: none;
+            border-radius: 6px;
+        }
+
+        .chat-input input::placeholder {
+            color: #666;
+        }
+
+        .chat-input input:focus {
+            border-color: #FF8C00;
+        }
+
+        .send-btn {
+            padding: 15px 25px;
+            background: #FF8C00;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .send-btn:hover {
+            background: #FF7F00;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #666;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: #f0f0f0;
+            color: black;
+        }
+
+        .status.error {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .status.loading {
+            background: #f9f9f9;
+            color: black;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .welcome-message h2 {
+            color: black;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .message-content {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <svg class="logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" fill="#FF8C00"/>
+                </svg>
+                EasyAI
+            </h1>
+            <p>Powered by GPT-4o via free Puter - Completly free up to 500 requests per day</p>
+        </div>
+
+        <!-- Status Area -->
+        <div id="status-area"></div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chat-messages">
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+            <button class="send-btn" id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // BrainWave Standalone Chat App - GPT-4o Only
+        class BrainWaveChat {
+            constructor() {
+                this.model = 'gpt-4o'; // Fixed to GPT-4o only
+                this.isReady = false;
+                this.conversation = [];
+                
+                // Initialize markdown parser for OpenAI formatting
+                this.md = window.markdownit({
+                    html: false,        // Disable HTML for security
+                    xhtmlOut: true,     // Use XHTML-style tags
+                    breaks: true,       // Convert line breaks to <br>
+                    linkify: true,      // Auto-convert URLs to links
+                    typographer: true   // Enable smart quotes and other typographic replacements
+                });
+                
+                this.init();
+            }
+
+            async init() {
+                this.showStatus('Initializing Puter.js AI...', 'loading');
+                
+                // Check if markdown-it loaded successfully
+                if (!window.markdownit) {
+                    console.warn('⚠️ markdown-it failed to load. OpenAI formatting will be limited.');
+                    this.md = null;
+                } else {
+                    console.log('✅ markdown-it loaded successfully for OpenAI formatting!');
+                }
+                
+                // Wait for Puter.js to load
+                await this.waitForPuter();
+                
+                // Test connection
+                const testResult = await this.testConnection();
+                if (testResult.success) {
+                    this.isReady = true;
+                    this.showStatus('✅ Connected to GPT-4o via Puter.js!', 'success');
+                    setTimeout(() => this.hideStatus(), 3000);
+                } else {
+                    this.showStatus(`❌ Connection failed: ${testResult.error}`, 'error');
+                }
+                
+                this.setupEventListeners();
+            }
+
+            async waitForPuter() {
+                return new Promise((resolve, reject) => {
+                    let attempts = 0;
+                    const maxAttempts = 50; // 10 seconds
+                    
+                    const checkPuter = () => {
+                        attempts++;
+                        
+                        if (window.puter && window.puter.ai) {
+                            console.log('✅ Puter.js loaded successfully!');
+                            resolve(true);
+                            return;
+                        }
+                        
+                        if (attempts >= maxAttempts) {
+                            reject(new Error('Puter.js failed to load after 10 seconds'));
+                            return;
+                        }
+                        
+                        setTimeout(checkPuter, 200);
+                    };
+                    
+                    checkPuter();
+                });
+            }
+
+            async testConnection() {
+                try {
+                    const response = await window.puter.ai.chat('Hello! Please respond with just "Connection successful"', {
+                        model: 'gpt-4o'
+                    });
+                    
+                    console.log('🔍 Test response structure:', response);
+                    console.log('🔍 Response type:', typeof response);
+                    
+                    return { 
+                        success: true, 
+                        response: this.extractResponseText(response)
+                    };
+                } catch (error) {
+                    return { 
+                        success: false, 
+                        error: error.message
+                    };
+                }
+            }
+
+            // Enhanced response extraction method
+            extractResponseText(response) {
+                console.log('🔍 Extracting from response:', response);
+                console.log('🔍 Response type:', typeof response);
+                
+                // If it's already a string, return it
+                if (typeof response === 'string') {
+                    return response;
+                }
+                
+                // Try different possible properties that might contain the text
+                const possibleTextProps = [
+                    'message',
+                    'content',
+                    'text',
+                    'data',
+                    'result',
+                    'output',
+                    'response',
+                    'answer',
+                    'reply'
+                ];
+                
+                for (const prop of possibleTextProps) {
+                    if (response && response[prop]) {
+                        if (typeof response[prop] === 'string') {
+                            console.log(`✅ Found text in property: ${prop}`);
+                            return response[prop];
+                        }
+                    }
+                }
+                
+                // Try nested properties
+                if (response && response.data && response.data.message) {
+                    console.log('✅ Found text in data.message');
+                    return response.data.message;
+                }
+                
+                if (response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.content) {
+                    console.log('✅ Found text in choices[0].message.content');
+                    return response.choices[0].message.content;
+                }
+                
+                // If response is an array, try the first element
+                if (Array.isArray(response) && response.length > 0) {
+                    console.log('✅ Response is array, trying first element');
+                    return this.extractResponseText(response[0]);
+                }
+                
+                // Log the full structure for debugging
+                console.warn('❌ Could not extract text from response. Full structure:');
+                console.warn(JSON.stringify(response, null, 2));
+                
+                // Last resort: try to convert to string
+                try {
+                    if (response && typeof response === 'object') {
+                        // If it has a toString method that's not the default
+                        if (response.toString && response.toString !== Object.prototype.toString) {
+                            return response.toString();
+                        }
+                        // Try JSON stringifying and see if it reveals the structure
+                        const jsonStr = JSON.stringify(response, null, 2);
+                        console.log('📝 Response as JSON:', jsonStr);
+                        return `Debug: Response structure - ${jsonStr}`;
+                    }
+                } catch (e) {
+                    console.error('❌ Error converting response:', e);
+                }
+                
+                return `Error: Could not extract text from response. Type: ${typeof response}`;
+            }
+
+            setupEventListeners() {
+                // Send button
+                document.getElementById('send-btn').addEventListener('click', () => {
+                    this.sendMessage();
+                });
+
+                // Enter key
+                document.getElementById('message-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+            }
+
+            async sendMessage() {
+                if (!this.isReady) {
+                    this.showStatus('❌ AI not ready yet. Please wait...', 'error');
+                    return;
+                }
+
+                const input = document.getElementById('message-input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+
+                // Clear input and disable send button
+                input.value = '';
+                const sendBtn = document.getElementById('send-btn');
+                sendBtn.disabled = true;
+
+                // Add user message
+                this.addMessage(message, 'user');
+                
+                // Show typing indicator
+                this.showTypingIndicator();
+
+                try {
+                    console.log(`🚀 Sending message to ${this.model}:`, message);
+                    
+                    // Send to AI
+                    const response = await window.puter.ai.chat(message, {
+                        model: this.model
+                    });
+
+                    console.log('📥 Raw AI response:', response);
+
+                    // Extract response text using our enhanced method
+                    const responseText = this.extractResponseText(response);
+                    
+                    console.log('📝 Extracted text:', responseText);
+
+                    // Hide typing and add AI response
+                    this.hideTypingIndicator();
+                    this.addMessage(responseText, 'bot');
+                    
+                    // Store conversation
+                    this.conversation.push(
+                        { role: 'user', content: message },
+                        { role: 'assistant', content: responseText }
+                    );
+
+                } catch (error) {
+                    this.hideTypingIndicator();
+                    this.addMessage(`❌ Error: ${error.message}`, 'bot');
+                    console.error('AI Error:', error);
+                }
+
+                // Re-enable send button
+                sendBtn.disabled = false;
+                input.focus();
+            }
+
+            addMessage(content, type) {
+                const messagesContainer = document.getElementById('chat-messages');
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                // Convert markdown to HTML for bot messages (GPT-4o responses)
+                if (type === 'bot' && this.md) {
+                    try {
+                        // Convert markdown to HTML
+                        const htmlContent = this.md.render(content);
+                        contentDiv.innerHTML = htmlContent;
+                        console.log('📝 Converted markdown to HTML:', htmlContent);
+                    } catch (error) {
+                        console.error('❌ Markdown conversion error:', error);
+                        // Fallback to plain text
+                        contentDiv.textContent = content;
+                    }
+                } else {
+                    // Keep user messages as plain text
+                    contentDiv.textContent = content;
+                }
+                
+                messageDiv.appendChild(contentDiv);
+                messagesContainer.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            showTypingIndicator() {
+                const messagesContainer = document.getElementById('chat-messages');
+                
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typing-indicator';
+                
+                typingDiv.innerHTML = `
+                    <span>AI is thinking</span>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(typingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            showStatus(message, type) {
+                const statusArea = document.getElementById('status-area');
+                statusArea.innerHTML = `<div class="status ${type}">${message}</div>`;
+            }
+
+            hideStatus() {
+                const statusArea = document.getElementById('status-area');
+                statusArea.innerHTML = '';
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new BrainWaveChat();
+        });
+    </script>
+</body>
+</html> 
