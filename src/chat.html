@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyAI - Lightning Fast AI Chat</title>
+    
+    <!-- Preload critical resources for performance -->
+    <link rel="preload" href="css/styles.css" as="style">
+    <link rel="preload" href="js/core.js" as="script">
+    <link rel="preload" href="js/ui.js" as="script">
+    
+    <!-- External dependencies -->
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
+    
+    <!-- Optimized styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Performance optimizations -->
+    <meta name="theme-color" content="#FF8C00">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- SEO and social -->
+    <meta name="description" content="Lightning-fast AI chat with direct frontend-to-AI communication. No backend delays, just pure speed.">
+    <meta name="keywords" content="AI chat, fast AI, GPT-4, real-time AI, no backend">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23FF8C00'/></svg>">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>
+                <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="14" fill="#FF8C00"/>
+                    <path d="M12 10h8v2h-8v-2zm0 4h8v2h-8v-2zm0 4h6v2h-6v-2z" fill="white"/>
+                </svg>
+                EasyAI
+            </h1>
+            <p>Lightning-fast AI responses with zero backend delays</p>
+        </header>
+
+        <!-- Chat Messages Container -->
+        <main class="chat-messages" id="chat-messages" role="main" aria-live="polite" aria-label="Chat conversation">
+            <!-- Messages will be dynamically added here -->
+        </main>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typing-indicator" aria-label="AI is typing">
+            AI is thinking...
+        </div>
+
+        <!-- Status Area -->
+        <div class="status-area" id="status-area" role="status" aria-live="polite">
+            <!-- Status messages will appear here -->
+        </div>
+
+        <!-- Input Area -->
+        <footer class="input-area">
+            <textarea 
+                id="message-input" 
+                class="message-input" 
+                placeholder="Ask me anything... (Press Enter to send, Shift+Enter for new line)"
+                rows="1"
+                aria-label="Type your message"
+                autocomplete="off"
+                spellcheck="true"
+            ></textarea>
+            <button 
+                id="send-button" 
+                class="send-button" 
+                type="button"
+                aria-label="Send message"
+                title="Send message (Enter)"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+            </button>
+        </footer>
+    </div>
+
+    <!-- Performance monitoring (development only) -->
+    <script>
+        // Performance monitoring
+        if (typeof performance !== 'undefined' && performance.mark) {
+            performance.mark('app-start');
+        }
+    </script>
+
+    <!-- Core modules -->
+    <script src="js/core.js"></script>
+    <script src="js/ui.js"></script>
+
+    <!-- Application initialization -->
+    <script>
+        /**
+         * EasyAI Application - Optimized Initialization
+         * Direct frontend-to-AI communication for maximum speed
+         */
+        class EasyAIApp {
+            constructor() {
+                this.core = null;
+                this.ui = null;
+                this.performanceMetrics = {
+                    startTime: performance.now(),
+                    initTime: null,
+                    firstMessageTime: null
+                };
+                
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Initialize core AI engine
+                    this.core = new EasyAICore();
+                    
+                    // Initialize UI controller
+                    this.ui = new EasyAIUI(this.core);
+                    
+                    // Setup performance monitoring
+                    this.setupPerformanceMonitoring();
+                    
+                    // Mark initialization complete
+                    this.performanceMetrics.initTime = performance.now() - this.performanceMetrics.startTime;
+                    
+                    console.log(`🚀 EasyAI initialized in ${this.performanceMetrics.initTime.toFixed(2)}ms`);
+                    console.log('💡 Direct frontend-to-AI communication active - zero backend delays!');
+                    
+                    // Performance mark
+                    if (typeof performance !== 'undefined' && performance.mark) {
+                        performance.mark('app-ready');
+                        performance.measure('app-init', 'app-start', 'app-ready');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Failed to initialize EasyAI:', error);
+                    this.showError('Failed to initialize the application. Please refresh the page.');
+                }
+            }
+
+            setupPerformanceMonitoring() {
+                // Monitor first message performance
+                const originalSendMessage = this.ui.handleSendMessage.bind(this.ui);
+                this.ui.handleSendMessage = async () => {
+                    if (!this.performanceMetrics.firstMessageTime) {
+                        const startTime = performance.now();
+                        await originalSendMessage();
+                        this.performanceMetrics.firstMessageTime = performance.now() - startTime;
+                        console.log(`⚡ First message processed in ${this.performanceMetrics.firstMessageTime.toFixed(2)}ms`);
+                    } else {
+                        await originalSendMessage();
+                    }
+                };
+
+                // Performance monitoring in development
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    setInterval(() => {
+                        const coreMetrics = this.core?.getPerformanceMetrics();
+                        const uiMetrics = this.ui?.getPerformanceMetrics();
+                        
+                        console.log('📊 Performance Metrics:', {
+                            core: coreMetrics,
+                            ui: uiMetrics,
+                            app: this.performanceMetrics
+                        });
+                    }, 30000); // Every 30 seconds
+                }
+            }
+
+            showError(message) {
+                const statusArea = document.getElementById('status-area');
+                if (statusArea) {
+                    statusArea.innerHTML = `<div class="status error">${message}</div>`;
+                }
+            }
+
+            // Public API for external access
+            getMetrics() {
+                return {
+                    app: this.performanceMetrics,
+                    core: this.core?.getPerformanceMetrics(),
+                    ui: this.ui?.getPerformanceMetrics()
+                };
+            }
+
+            clearHistory() {
+                this.core?.clearChatHistory();
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    chatMessages.innerHTML = '';
+                }
+            }
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                window.easyAI = new EasyAIApp();
+            });
+        } else {
+            window.easyAI = new EasyAIApp();
+        }
+
+        // Global error handling
+        window.addEventListener('error', (event) => {
+            console.error('🚨 Global error:', event.error);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('🚨 Unhandled promise rejection:', event.reason);
+        });
+    </script>
+
+    <!-- Service Worker for caching (optional) -->
+    <script>
+        if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            navigator.serviceWorker.register('/sw.js').catch(err => {
+                console.log('Service Worker registration failed:', err);
+            });
+        }
+    </script>
+</body>
+</html> 
