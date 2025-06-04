@@ -3,9 +3,16 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ========================================
-echo   EasyAI Standalone App Launcher
-echo   Professional AI Chat Interface
+echo       EasyAI - AI Chat Interface
 echo ========================================
+echo.
+echo Starting EasyAI application...
+echo.
+
+REM Define the HTML file to open
+set "HTML_FILE=index.html"
+set "BACKUP_FILE=src/index.html"
+
 echo.
 echo Checking for web server dependencies...
 echo.
@@ -16,7 +23,6 @@ echo.
 
 :: Set variables
 set PORT=8080
-set HTML_FILE=index.html
 set SERVER_STARTED=0
 
 :: Check if the HTML file exists
