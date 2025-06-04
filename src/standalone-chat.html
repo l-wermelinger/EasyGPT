@@ -381,267 +381,180 @@
     </div>
 
     <script>
-        // BrainWave Standalone Chat App - GPT-4o Only
-        class BrainWaveChat {
+        const LOCAL_STORAGE_KEY = 'easyAIChatHistory';
+        const MAX_CONTEXT_MESSAGES = 5; // Keep last 5 messages for context
+
+        class PuterChatApp {
             constructor() {
-                this.model = 'gpt-4o'; // Fixed to GPT-4o only
-                this.isReady = false;
-                this.conversation = [];
+                this.chatMessages = document.getElementById('chat-messages');
+                this.messageInput = document.getElementById('message-input');
+                this.sendButton = document.getElementById('send-btn');
+                this.typingIndicator = document.querySelector('.typing-indicator');
                 
-                // Initialize markdown parser for OpenAI formatting
-                this.md = window.markdownit({
-                    html: false,        // Disable HTML for security
-                    xhtmlOut: true,     // Use XHTML-style tags
-                    breaks: true,       // Convert line breaks to <br>
-                    linkify: true,      // Auto-convert URLs to links
-                    typographer: true   // Enable smart quotes and other typographic replacements
+                this.md = window.markdownit();
+                this.selectedModel = 'gpt-4o'; // Default model since no selector
+                this.isWaitingForAI = false;
+
+                this.chatHistory = []; // Initialize chat history
+
+                this.sendButton.addEventListener('click', this.sendMessage.bind(this));
+                this.messageInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        this.sendMessage(event);
+                    }
                 });
-                
-                this.init();
+
+                this.loadChatHistory(); // Load history on initialization
             }
 
-            async init() {
-                this.showStatus('Initializing Puter.js AI...', 'loading');
-                
-                // Check if markdown-it loaded successfully
-                if (!window.markdownit) {
-                    console.warn('⚠️ markdown-it failed to load. OpenAI formatting will be limited.');
-                    this.md = null;
-                } else {
-                    console.log('✅ markdown-it loaded successfully for OpenAI formatting!');
+            loadChatHistory() {
+                const storedHistory = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (storedHistory) {
+                    try {
+                        this.chatHistory = JSON.parse(storedHistory);
+                        this.chatHistory.forEach(message => {
+                            this.addMessageToUI(message.sender, message.text, false, true); 
+                        });
+                    } catch (error) {
+                        console.error("Error parsing chat history from localStorage:", error);
+                        this.chatHistory = []; // Reset history if parsing fails
+                        localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear corrupted data
+                    }
                 }
+            }
+
+            saveChatMessage(sender, text) {
+                const message = {
+                    sender,
+                    text,
+                    timestamp: Date.now()
+                };
+                this.chatHistory.push(message);
                 
-                // Wait for Puter.js to load
-                await this.waitForPuter();
-                
-                // Test connection
-                const testResult = await this.testConnection();
-                if (testResult.success) {
-                    this.isReady = true;
-                    this.showStatus('✅ Connected to GPT-4o via Puter.js!', 'success');
-                    setTimeout(() => this.hideStatus(), 3000);
-                } else {
-                    this.showStatus(`❌ Connection failed: ${testResult.error}`, 'error');
+                // Keep only the last MAX_CONTEXT_MESSAGES messages
+                if (this.chatHistory.length > MAX_CONTEXT_MESSAGES) {
+                    this.chatHistory = this.chatHistory.slice(-MAX_CONTEXT_MESSAGES);
                 }
-                
-                this.setupEventListeners();
-            }
 
-            async waitForPuter() {
-                return new Promise((resolve, reject) => {
-                    let attempts = 0;
-                    const maxAttempts = 50; // 10 seconds
-                    
-                    const checkPuter = () => {
-                        attempts++;
-                        
-                        if (window.puter && window.puter.ai) {
-                            console.log('✅ Puter.js loaded successfully!');
-                            resolve(true);
-                            return;
-                        }
-                        
-                        if (attempts >= maxAttempts) {
-                            reject(new Error('Puter.js failed to load after 10 seconds'));
-                            return;
-                        }
-                        
-                        setTimeout(checkPuter, 200);
-                    };
-                    
-                    checkPuter();
-                });
-            }
-
-            async testConnection() {
                 try {
-                    const response = await window.puter.ai.chat('Hello! Please respond with just "Connection successful"', {
-                        model: 'gpt-4o'
-                    });
-                    
-                    console.log('🔍 Test response structure:', response);
-                    console.log('🔍 Response type:', typeof response);
-                    
-                    return { 
-                        success: true, 
-                        response: this.extractResponseText(response)
-                    };
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.chatHistory));
                 } catch (error) {
-                    return { 
-                        success: false, 
-                        error: error.message
-                    };
+                    console.error("Error saving chat history to localStorage:", error);
                 }
             }
 
-            // Enhanced response extraction method
-            extractResponseText(response) {
-                console.log('🔍 Extracting from response:', response);
-                console.log('🔍 Response type:', typeof response);
-                
-                // If it's already a string, return it
-                if (typeof response === 'string') {
-                    return response;
+            buildContextMessage(newUserMessage) {
+                // If no history, just return the new message
+                if (this.chatHistory.length === 0) {
+                    return newUserMessage;
                 }
-                
-                // Try different possible properties that might contain the text
-                const possibleTextProps = [
-                    'message',
-                    'content',
-                    'text',
-                    'data',
-                    'result',
-                    'output',
-                    'response',
-                    'answer',
-                    'reply'
-                ];
-                
-                for (const prop of possibleTextProps) {
-                    if (response && response[prop]) {
-                        if (typeof response[prop] === 'string') {
-                            console.log(`✅ Found text in property: ${prop}`);
-                            return response[prop];
-                        }
-                    }
-                }
-                
-                // Try nested properties
-                if (response && response.data && response.data.message) {
-                    console.log('✅ Found text in data.message');
-                    return response.data.message;
-                }
-                
-                if (response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.content) {
-                    console.log('✅ Found text in choices[0].message.content');
-                    return response.choices[0].message.content;
-                }
-                
-                // If response is an array, try the first element
-                if (Array.isArray(response) && response.length > 0) {
-                    console.log('✅ Response is array, trying first element');
-                    return this.extractResponseText(response[0]);
-                }
-                
-                // Log the full structure for debugging
-                console.warn('❌ Could not extract text from response. Full structure:');
-                console.warn(JSON.stringify(response, null, 2));
-                
-                // Last resort: try to convert to string
-                try {
-                    if (response && typeof response === 'object') {
-                        // If it has a toString method that's not the default
-                        if (response.toString && response.toString !== Object.prototype.toString) {
-                            return response.toString();
-                        }
-                        // Try JSON stringifying and see if it reveals the structure
-                        const jsonStr = JSON.stringify(response, null, 2);
-                        console.log('📝 Response as JSON:', jsonStr);
-                        return `Debug: Response structure - ${jsonStr}`;
-                    }
-                } catch (e) {
-                    console.error('❌ Error converting response:', e);
-                }
-                
-                return `Error: Could not extract text from response. Type: ${typeof response}`;
-            }
 
-            setupEventListeners() {
-                // Send button
-                document.getElementById('send-btn').addEventListener('click', () => {
-                    this.sendMessage();
+                // Build context from chat history
+                let contextMessage = "Previous conversation:\n";
+                this.chatHistory.forEach(message => {
+                    const role = message.sender === 'user' ? 'User' : 'Assistant';
+                    contextMessage += `${role}: ${message.text}\n`;
                 });
+                
+                contextMessage += `\nUser: ${newUserMessage}`;
+                return contextMessage;
+            }
 
-                // Enter key
-                document.getElementById('message-input').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.sendMessage();
+            async sendMessage(event) {
+                if (event) event.preventDefault();
+                const userInput = this.messageInput.value.trim();
+
+                if (userInput && !this.isWaitingForAI) {
+                    this.addMessageToUI('user', userInput);
+                    this.saveChatMessage('user', userInput); // Save user message
+                    this.messageInput.value = '';
+                    this.showTypingIndicator(true);
+                    this.isWaitingForAI = true;
+                    this.sendButton.disabled = true;
+                    this.messageInput.disabled = true;
+
+                    try {
+                        // Build message with context
+                        const messageWithContext = this.buildContextMessage(userInput);
+                        
+                        const stream = await window.puter.ai.chat(messageWithContext, {
+                            model: this.selectedModel,
+                            stream: true
+                        });
+
+                        let aiResponseText = '';
+                        let currentBotMessageDiv = null;
+
+                        for await (const part of stream) {
+                            if (part.error) {
+                                console.error(`Error from ${this.selectedModel}:`, part.error);
+                                aiResponseText += `\n\n*Error: ${part.error}*`;
+                                if (currentBotMessageDiv) {
+                                    currentBotMessageDiv.innerHTML = this.md.render(aiResponseText);
+                                } else {
+                                    currentBotMessageDiv = this.addMessageToUI('ai', aiResponseText, false, true); 
+                                }
+                                break; 
+                            }
+                            if (part.text) {
+                                aiResponseText += part.text;
+                                if (!currentBotMessageDiv) {
+                                    // Create the bot message div on the first chunk of text
+                                    currentBotMessageDiv = this.addMessageToUI('ai', '', true); 
+                                }
+                                // Update the content of the existing bot message div
+                                currentBotMessageDiv.innerHTML = this.md.render(aiResponseText);
+                                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                            }
+                        }
+                        
+                        if (currentBotMessageDiv) { 
+                           currentBotMessageDiv.classList.remove('typing'); 
+                        }
+                        // Only save if there was some text, even if it was an error message formatted above
+                        if (aiResponseText.trim() !== '') {
+                            this.saveChatMessage('ai', aiResponseText); 
+                        }
+                        
+                    } catch (error) {
+                        console.error("Error during AI chat:", error);
+                        const errorMessage = "Sorry, I encountered an error. Please try again.";
+                        this.addMessageToUI('ai', errorMessage);
+                        this.saveChatMessage('ai', errorMessage); 
+                    } finally {
+                        this.showTypingIndicator(false);
+                        this.isWaitingForAI = false;
+                        this.sendButton.disabled = false;
+                        this.messageInput.disabled = false;
+                        this.messageInput.focus();
                     }
-                });
+                }
             }
 
-            async sendMessage() {
-                if (!this.isReady) {
-                    this.showStatus('❌ AI not ready yet. Please wait...', 'error');
-                    return;
-                }
-
-                const input = document.getElementById('message-input');
-                const message = input.value.trim();
-                
-                if (!message) return;
-
-                // Clear input and disable send button
-                input.value = '';
-                const sendBtn = document.getElementById('send-btn');
-                sendBtn.disabled = true;
-
-                // Add user message
-                this.addMessage(message, 'user');
-                
-                // Show typing indicator
-                this.showTypingIndicator();
-
-                try {
-                    console.log(`🚀 Sending message to ${this.model}:`, message);
-                    
-                    // Send to AI
-                    const response = await window.puter.ai.chat(message, {
-                        model: this.model
-                    });
-
-                    console.log('📥 Raw AI response:', response);
-
-                    // Extract response text using our enhanced method
-                    const responseText = this.extractResponseText(response);
-                    
-                    console.log('📝 Extracted text:', responseText);
-
-                    // Hide typing and add AI response
-                    this.hideTypingIndicator();
-                    this.addMessage(responseText, 'bot');
-                    
-                    // Store conversation
-                    this.conversation.push(
-                        { role: 'user', content: message },
-                        { role: 'assistant', content: responseText }
-                    );
-
-                } catch (error) {
-                    this.hideTypingIndicator();
-                    this.addMessage(`❌ Error: ${error.message}`, 'bot');
-                    console.error('AI Error:', error);
-                }
-
-                // Re-enable send button
-                sendBtn.disabled = false;
-                input.focus();
-            }
-
-            addMessage(content, type) {
+            addMessageToUI(sender, messageText, isBotTyping = false, isLoadingHistory = false) {
                 const messagesContainer = document.getElementById('chat-messages');
                 
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${type}`;
+                messageDiv.className = `message ${sender}`;
                 
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'message-content';
                 
                 // Convert markdown to HTML for bot messages (GPT-4o responses)
-                if (type === 'bot' && this.md) {
+                if (sender === 'ai' && this.md) {
                     try {
                         // Convert markdown to HTML
-                        const htmlContent = this.md.render(content);
+                        const htmlContent = this.md.render(messageText);
                         contentDiv.innerHTML = htmlContent;
                         console.log('📝 Converted markdown to HTML:', htmlContent);
                     } catch (error) {
                         console.error('❌ Markdown conversion error:', error);
                         // Fallback to plain text
-                        contentDiv.textContent = content;
+                        contentDiv.textContent = messageText;
                     }
                 } else {
                     // Keep user messages as plain text
-                    contentDiv.textContent = content;
+                    contentDiv.textContent = messageText;
                 }
                 
                 messageDiv.appendChild(contentDiv);
@@ -649,32 +562,19 @@
                 
                 // Scroll to bottom
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                // For streaming, we return the message div to update it later
+                // For other cases, we don't need to return it if we are not modifying it after appending
+                if (sender === 'ai' && isBotTyping && messageText === '') { // Case for initial empty div for streaming AI
+                    return contentDiv;
+                }
+                // return undefined or contentDiv if needed for other specific cases
             }
 
-            showTypingIndicator() {
-                const messagesContainer = document.getElementById('chat-messages');
-                
-                const typingDiv = document.createElement('div');
-                typingDiv.className = 'typing-indicator';
-                typingDiv.id = 'typing-indicator';
-                
-                typingDiv.innerHTML = `
-                    <span>AI is thinking</span>
-                    <div class="typing-dots">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                    </div>
-                `;
-                
-                messagesContainer.appendChild(typingDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-
-            hideTypingIndicator() {
+            showTypingIndicator(isTyping) {
                 const typingIndicator = document.getElementById('typing-indicator');
                 if (typingIndicator) {
-                    typingIndicator.remove();
+                    typingIndicator.style.display = isTyping ? 'flex' : 'none';
                 }
             }
 
@@ -691,7 +591,7 @@
 
         // Initialize the app when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new BrainWaveChat();
+            new PuterChatApp();
         });
     </script>
 </body>
