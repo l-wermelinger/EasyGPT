@@ -13,6 +13,7 @@
     <!-- External dependencies -->
     <script src="https://js.puter.com/v2/"></script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <!-- Optimized styles -->
     <link rel="stylesheet" href="css/styles.css">
@@ -48,11 +49,6 @@
             <!-- Messages will be dynamically added here -->
         </main>
 
-        <!-- Typing Indicator -->
-        <div class="typing-indicator" id="typing-indicator" aria-label="AI is typing">
-            AI is thinking...
-        </div>
-
         <!-- Status Area -->
         <div class="status-area" id="status-area" role="status" aria-live="polite">
             <!-- Status messages will appear here -->
@@ -69,6 +65,28 @@
                 autocomplete="off"
                 spellcheck="true"
             ></textarea>
+            <input 
+                type="file" 
+                id="file-input" 
+                accept=".pdf"
+                style="display: none;"
+                aria-label="Upload PDF file"
+            >
+            <button 
+                id="file-upload-button" 
+                class="file-upload-button" 
+                type="button"
+                aria-label="Upload PDF file"
+                title="Upload PDF file to extract text"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10,9 9,9 8,9"/>
+                </svg>
+            </button>
             <button 
                 id="send-button" 
                 class="send-button" 

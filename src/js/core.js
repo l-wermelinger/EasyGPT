@@ -38,14 +38,17 @@ class EasyAICore {
     }
 
     setupPerformanceOptimizations() {
-        // Preload markdown processor
+        // Preload markdown processor with proper configuration
         if (typeof markdownit !== 'undefined') {
             this.md = markdownit({
                 html: true,
                 linkify: true,
                 typographer: true,
-                breaks: true
+                breaks: true // Convert line breaks to <br>
             });
+        } else {
+            console.warn('Markdown-it library not available, using fallback renderer');
+            this.md = null;
         }
 
         // Setup request animation frame for smooth streaming
@@ -461,16 +464,54 @@ class EasyAICore {
         }
     }
 
-    // Optimized markdown rendering
+    // Enhanced markdown rendering with fallback
     renderMarkdown(text) {
-        if (!this.md) return text;
+        if (!text) return '';
         
-        try {
-            return this.md.render(text);
-        } catch (error) {
-            console.warn('Markdown rendering error:', error);
-            return text;
+        // If markdown-it is available, use it
+        if (this.md) {
+            try {
+                return this.md.render(text);
+            } catch (error) {
+                console.warn('Markdown rendering error:', error);
+                return this.fallbackMarkdownRender(text);
+            }
         }
+        
+        // Fallback markdown rendering
+        return this.fallbackMarkdownRender(text);
+    }
+
+    // Fallback markdown renderer for when markdown-it isn't available
+    fallbackMarkdownRender(text) {
+        return text
+            // Convert double line breaks to paragraphs
+            .replace(/\n\n+/g, '</p><p>')
+            // Convert single line breaks to <br>
+            .replace(/\n/g, '<br>')
+            // Wrap in paragraph tags
+            .replace(/^/, '<p>')
+            .replace(/$/, '</p>')
+            // Handle bold text **text**
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // Handle italic text *text*
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            // Handle inline code `code`
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            // Handle code blocks ```code```
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            // Handle headers # Header
+            .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+            // Handle lists - * item
+            .replace(/^\* (.*)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            // Handle numbered lists 1. item
+            .replace(/^\d+\. (.*)$/gm, '<li>$1</li>')
+            // Clean up empty paragraphs
+            .replace(/<p><\/p>/g, '')
+            .replace(/<p>\s*<\/p>/g, '');
     }
 
     // Performance monitoring with storage metrics

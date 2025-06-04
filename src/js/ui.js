@@ -7,14 +7,15 @@ class EasyAIUI {
     constructor(aiCore) {
         this.aiCore = aiCore;
         this.elements = {};
-        this.animationQueue = [];
-        this.isAnimating = false;
         
-        // Performance optimizations
-        this.messagePool = []; // Reuse message elements
-        this.maxPoolSize = 50;
-        this.scrollThrottle = 16; // ~60fps
-        this.lastScrollUpdate = 0;
+        // Simplified scroll management
+        this.isAutoScrolling = false;
+        this.userScrolledUp = false;
+        this.lastScrollPosition = 0;
+        
+        // Streaming state
+        this.isAITyping = false;
+        this.currentStreamingMessage = null;
         
         this.init();
     }
@@ -22,7 +23,7 @@ class EasyAIUI {
     init() {
         this.cacheElements();
         this.setupEventListeners();
-        this.setupPerformanceOptimizations();
+        this.setupStorageMonitoring();
         this.loadChatHistory();
     }
 
@@ -31,8 +32,9 @@ class EasyAIUI {
             chatMessages: document.getElementById('chat-messages'),
             messageInput: document.getElementById('message-input'),
             sendButton: document.getElementById('send-button'),
-            typingIndicator: document.getElementById('typing-indicator'),
-            statusArea: document.getElementById('status-area')
+            statusArea: document.getElementById('status-area'),
+            fileInput: document.getElementById('file-input'),
+            fileUploadButton: document.getElementById('file-upload-button')
         };
 
         // Validate required elements
@@ -48,6 +50,12 @@ class EasyAIUI {
         // Send button
         this.elements.sendButton?.addEventListener('click', this.handleSendMessage.bind(this));
         
+        // File upload button
+        this.elements.fileUploadButton?.addEventListener('click', this.handleFileUploadClick.bind(this));
+        
+        // File input change
+        this.elements.fileInput?.addEventListener('change', this.handleFileSelect.bind(this));
+        
         // Enter key handling
         this.elements.messageInput?.addEventListener('keypress', (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
@@ -59,23 +67,8 @@ class EasyAIUI {
         // Auto-resize textarea
         this.elements.messageInput?.addEventListener('input', this.handleInputResize.bind(this));
 
-        // Scroll optimization
-        this.elements.chatMessages?.addEventListener('scroll', this.throttledScrollHandler.bind(this));
-    }
-
-    setupPerformanceOptimizations() {
-        // Intersection Observer for message visibility
-        this.messageObserver = new IntersectionObserver(
-            this.handleMessageVisibility.bind(this),
-            { threshold: 0.1 }
-        );
-
-        // Virtual scrolling for large conversations
-        this.virtualScrollEnabled = false;
-        this.visibleMessageRange = { start: 0, end: 50 };
-        
-        // Storage monitoring UI
-        this.setupStorageMonitoring();
+        // Simple scroll handling
+        this.elements.chatMessages?.addEventListener('scroll', this.handleUserScroll.bind(this));
     }
 
     setupStorageMonitoring() {
@@ -180,38 +173,24 @@ class EasyAIUI {
     updateStorageDisplay() {
         const monitor = document.getElementById('storage-monitor');
         if (!monitor) return;
-        
+
         const metrics = this.aiCore.getPerformanceMetrics();
-        const storage = metrics.storage;
-        
-        const usageElement = document.getElementById('storage-usage');
-        const messagesElement = document.getElementById('storage-messages');
-        const statusElement = document.getElementById('storage-status');
-        
-        if (usageElement) {
-            const usageColor = storage.usage > 80 ? '#ff4444' : storage.usage > 60 ? '#ffaa00' : '#44ff44';
-            usageElement.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <div style="width: 50px; height: 8px; background: #333; border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${storage.usage}%; height: 100%; background: ${usageColor}; transition: all 0.3s;"></div>
-                    </div>
-                    <span>${storage.usage.toFixed(1)}%</span>
-                </div>
-                <div style="font-size: 10px; opacity: 0.7;">
-                    ${this.formatBytes(storage.totalSize)} / ${this.formatBytes(storage.available + storage.totalSize)}
-                </div>
-            `;
+        const storageUsage = document.getElementById('storage-usage');
+        const storageMessages = document.getElementById('storage-messages');
+        const storageStatus = document.getElementById('storage-status');
+
+        if (storageUsage) {
+            const usage = metrics.storage.usage;
+            const color = usage > 80 ? '#ff4444' : usage > 60 ? '#ffaa00' : '#44ff44';
+            storageUsage.innerHTML = `Usage: <span style="color: ${color}">${usage}%</span> (${this.formatBytes(metrics.storage.totalSize)})`;
         }
-        
-        if (messagesElement) {
-            messagesElement.textContent = `Messages: ${metrics.historySize}`;
+
+        if (storageMessages) {
+            storageMessages.textContent = `Messages: ${metrics.historySize}`;
         }
-        
-        if (statusElement) {
-            const status = storage.usage > 90 ? '🚨 Critical' : 
-                          storage.usage > 80 ? '⚠️ High' : 
-                          storage.usage > 60 ? '📊 Moderate' : '✅ Good';
-            statusElement.textContent = `Status: ${status}`;
+
+        if (storageStatus) {
+            storageStatus.textContent = `Status: ${metrics.isWaiting ? 'Processing...' : 'Ready'}`;
         }
     }
 
@@ -220,10 +199,9 @@ class EasyAIUI {
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // Optimized message handling
     async handleSendMessage() {
         const userInput = this.elements.messageInput?.value?.trim();
         if (!userInput || this.aiCore.isWaitingForAI) return;
@@ -235,6 +213,9 @@ class EasyAIUI {
         this.elements.messageInput.value = '';
         this.setLoadingState(true);
 
+        // Reset scroll state for new conversation
+        this.userScrolledUp = false;
+
         // Prepare AI response container
         let aiMessageElement = null;
 
@@ -244,7 +225,9 @@ class EasyAIUI {
                 // Stream update callback
                 (text, isFirstChunk, isFinal) => {
                     if (isFirstChunk) {
+                        this.isAITyping = true;
                         aiMessageElement = this.addMessage('ai', '', true);
+                        this.currentStreamingMessage = aiMessageElement;
                     }
                     if (aiMessageElement) {
                         this.updateMessageContent(aiMessageElement, text, isFinal);
@@ -252,13 +235,22 @@ class EasyAIUI {
                 },
                 // Complete callback
                 (finalText) => {
+                    this.isAITyping = false;
+                    this.currentStreamingMessage = null;
+                    
                     if (aiMessageElement) {
                         aiMessageElement.classList.remove('typing');
                     }
                     this.setLoadingState(false);
+                    
+                    // Final scroll to bottom
+                    this.scrollToBottom();
                 },
                 // Error callback
                 (error) => {
+                    this.isAITyping = false;
+                    this.currentStreamingMessage = null;
+                    
                     const errorMsg = "Sorry, I encountered an error. Please try again.";
                     if (aiMessageElement) {
                         this.updateMessageContent(aiMessageElement, errorMsg, true);
@@ -271,39 +263,166 @@ class EasyAIUI {
             );
         } catch (error) {
             console.error('Send message error:', error);
+            this.isAITyping = false;
+            this.currentStreamingMessage = null;
             this.setLoadingState(false);
         }
     }
 
-    // Optimized message creation
+    // File Upload Handling
+    handleFileUploadClick() {
+        if (this.elements.fileInput) {
+            this.elements.fileInput.click();
+        }
+    }
+
+    async handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+            this.showStatus('Please select a PDF file.', 'error');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            this.showStatus('File size must be less than 10MB.', 'error');
+            return;
+        }
+
+        try {
+            // Show processing state
+            this.setFileUploadState(true);
+            this.showStatus('Processing PDF...', 'info');
+
+            // Extract text from PDF
+            const text = await this.extractTextFromPDF(file);
+            
+            if (!text || text.trim().length === 0) {
+                this.showStatus('No text found in PDF. The PDF might be image-based or encrypted.', 'error');
+                return;
+            }
+
+            // Add extracted text to input
+            const currentInput = this.elements.messageInput.value;
+            const separator = currentInput ? '\n\n' : '';
+            const pdfText = `📄 PDF Content:\n${text}`;
+            
+            this.elements.messageInput.value = currentInput + separator + pdfText;
+            this.handleInputResize();
+            
+            // Focus on input
+            this.elements.messageInput.focus();
+            
+            this.showStatus(`PDF processed successfully! ${text.length} characters extracted.`, 'success');
+            
+        } catch (error) {
+            console.error('PDF processing error:', error);
+            this.showStatus('Failed to process PDF. Please try again.', 'error');
+        } finally {
+            this.setFileUploadState(false);
+            // Clear file input
+            event.target.value = '';
+        }
+    }
+
+    async extractTextFromPDF(file) {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async function() {
+                try {
+                    // Configure PDF.js worker
+                    if (typeof pdfjsLib !== 'undefined') {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    }
+
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    
+                    let fullText = '';
+                    
+                    // Extract text from each page
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        
+                        const pageText = textContent.items
+                            .map(item => item.str)
+                            .join(' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                        
+                        if (pageText) {
+                            fullText += `\n\nPage ${pageNum}:\n${pageText}`;
+                        }
+                    }
+                    
+                    resolve(fullText.trim());
+                    
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            
+            fileReader.onerror = () => reject(new Error('Failed to read file'));
+            fileReader.readAsArrayBuffer(file);
+        });
+    }
+
+    setFileUploadState(isProcessing) {
+        if (this.elements.fileUploadButton) {
+            this.elements.fileUploadButton.disabled = isProcessing;
+            if (isProcessing) {
+                this.elements.fileUploadButton.classList.add('processing');
+            } else {
+                this.elements.fileUploadButton.classList.remove('processing');
+            }
+        }
+    }
+
+    showStatus(message, type = 'info') {
+        if (!this.elements.statusArea) return;
+        
+        this.elements.statusArea.innerHTML = `<div class="status ${type}">${message}</div>`;
+        
+        // Auto-hide after 5 seconds for success/info messages
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                if (this.elements.statusArea) {
+                    this.elements.statusArea.innerHTML = '';
+                }
+            }, 5000);
+        }
+    }
+
+    // Simplified message creation
     addMessage(sender, text, isStreaming = false) {
         const messageElement = this.createMessageElement(sender, text, isStreaming);
         
-        // Add to DOM with animation
+        // Check if user was at bottom before adding
+        const wasAtBottom = this.isAtBottom();
+        
+        // Add to DOM
         this.elements.chatMessages.appendChild(messageElement);
         
-        // Smooth scroll to bottom
-        this.smoothScrollToBottom();
-        
-        // Setup intersection observer
-        this.messageObserver.observe(messageElement);
+        // Auto-scroll if user was at bottom or it's AI typing
+        if (wasAtBottom || this.isAITyping) {
+            this.scrollToBottom();
+        }
         
         return messageElement;
     }
 
     createMessageElement(sender, text, isStreaming = false) {
-        // Try to reuse from pool
-        let messageDiv = this.messagePool.pop();
-        if (!messageDiv) {
-            messageDiv = document.createElement('div');
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            messageDiv.appendChild(contentDiv);
-        }
-
-        // Configure element
+        const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}${isStreaming ? ' typing' : ''}`;
-        const contentDiv = messageDiv.querySelector('.message-content');
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
         
         // Set content efficiently
         if (sender === 'ai' && text) {
@@ -311,10 +430,8 @@ class EasyAIUI {
         } else {
             contentDiv.textContent = text;
         }
-
-        // Add animation class
-        messageDiv.classList.add('slide-up');
         
+        messageDiv.appendChild(contentDiv);
         return messageDiv;
     }
 
@@ -329,9 +446,9 @@ class EasyAIUI {
             contentDiv.textContent = text;
         }
 
-        // Smooth scroll if needed
-        if (this.shouldAutoScroll()) {
-            this.smoothScrollToBottom();
+        // Auto-scroll during AI typing if user hasn't scrolled up
+        if (this.isAITyping && !this.userScrolledUp) {
+            this.scrollToBottom();
         }
 
         // Final cleanup
@@ -340,39 +457,41 @@ class EasyAIUI {
         }
     }
 
-    // Performance-optimized scrolling
-    smoothScrollToBottom() {
-        const now = performance.now();
-        if (now - this.lastScrollUpdate >= this.scrollThrottle) {
-            this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
-            this.lastScrollUpdate = now;
-        } else {
-            requestAnimationFrame(() => {
-                this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
-                this.lastScrollUpdate = performance.now();
-            });
+    // Simplified scroll handling
+    handleUserScroll() {
+        const container = this.elements.chatMessages;
+        const currentScrollTop = container.scrollTop;
+        
+        // Detect if user scrolled up
+        if (currentScrollTop < this.lastScrollPosition && !this.isAutoScrolling) {
+            this.userScrolledUp = true;
+        } else if (this.isAtBottom()) {
+            this.userScrolledUp = false;
         }
+        
+        this.lastScrollPosition = currentScrollTop;
     }
 
-    shouldAutoScroll() {
+    isAtBottom(threshold = 50) {
         const container = this.elements.chatMessages;
-        const threshold = 100; // pixels from bottom
         return (container.scrollHeight - container.scrollTop - container.clientHeight) <= threshold;
     }
 
-    throttledScrollHandler() {
-        const now = performance.now();
-        if (now - this.lastScrollUpdate >= this.scrollThrottle) {
-            this.handleScroll();
-            this.lastScrollUpdate = now;
+    scrollToBottom() {
+        if (this.userScrolledUp && !this.isAITyping) {
+            return; // Don't auto-scroll if user scrolled up (unless AI is typing)
         }
-    }
-
-    handleScroll() {
-        // Virtual scrolling logic for performance with large conversations
-        if (this.virtualScrollEnabled) {
-            this.updateVisibleMessages();
-        }
+        
+        const container = this.elements.chatMessages;
+        this.isAutoScrolling = true;
+        
+        // Simple, immediate scroll to bottom
+        container.scrollTop = container.scrollHeight;
+        
+        // Reset auto-scrolling flag
+        setTimeout(() => {
+            this.isAutoScrolling = false;
+        }, 100);
     }
 
     // UI State Management
@@ -384,16 +503,8 @@ class EasyAIUI {
             this.elements.messageInput.disabled = isLoading;
         }
         
-        this.showTypingIndicator(isLoading);
-        
         if (!isLoading && this.elements.messageInput) {
             this.elements.messageInput.focus();
-        }
-    }
-
-    showTypingIndicator(show) {
-        if (this.elements.typingIndicator) {
-            this.elements.typingIndicator.style.display = show ? 'flex' : 'none';
         }
     }
 
@@ -403,7 +514,12 @@ class EasyAIUI {
 
         // Auto-resize textarea
         input.style.height = 'auto';
-        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+        input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+
+        // Maintain scroll position if at bottom
+        if (this.isAtBottom()) {
+            this.scrollToBottom();
+        }
     }
 
     // Load chat history efficiently
@@ -420,26 +536,12 @@ class EasyAIUI {
         
         if (this.elements.chatMessages) {
             this.elements.chatMessages.appendChild(fragment);
-            this.smoothScrollToBottom();
+            this.scrollToBottom();
         }
-    }
-
-    // Message visibility optimization
-    handleMessageVisibility(entries) {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) {
-                // Message is out of view - could optimize here
-                entry.target.classList.add('out-of-view');
-            } else {
-                entry.target.classList.remove('out-of-view');
-            }
-        });
     }
 
     // Cleanup and memory management
     cleanup() {
-        this.messageObserver?.disconnect();
-        
         // Clear storage monitoring interval
         if (this.storageUpdateInterval) {
             clearInterval(this.storageUpdateInterval);
@@ -451,14 +553,6 @@ class EasyAIUI {
             monitor.remove();
         }
         
-        // Return elements to pool
-        const messages = this.elements.chatMessages?.querySelectorAll('.message');
-        messages?.forEach(msg => {
-            if (this.messagePool.length < this.maxPoolSize) {
-                this.messagePool.push(msg);
-            }
-        });
-        
         console.log('🧹 UI cleanup complete');
     }
 
@@ -466,9 +560,9 @@ class EasyAIUI {
     getPerformanceMetrics() {
         return {
             messageCount: this.elements.chatMessages?.children.length || 0,
-            poolSize: this.messagePool.length,
-            virtualScrollEnabled: this.virtualScrollEnabled,
-            lastScrollUpdate: this.lastScrollUpdate
+            isAITyping: this.isAITyping,
+            userScrolledUp: this.userScrolledUp,
+            lastScrollPosition: this.lastScrollPosition
         };
     }
 }

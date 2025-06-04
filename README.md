@@ -159,11 +159,21 @@ python -m http.server 8000
 - **Optimized Rendering**: GPU-accelerated animations
 - **Smart Caching**: Efficient memory usage
 
+### File Processing
+- **PDF Upload**: Click the document icon to upload PDF files
+- **Client-Side Processing**: Text extraction happens in your browser
+- **No Server Upload**: Files never leave your device
+- **Automatic Text Insertion**: Extracted text is added to your message
+- **Size Limits**: Supports PDFs up to 10MB
+- **Format Support**: Works with text-based PDFs (not image-only PDFs)
+
 ### User Experience
 - **Instant Responses**: Sub-second AI communication
 - **Smooth Animations**: Buttery 60fps interface
 - **Responsive Design**: Perfect on all devices
 - **Dark Mode**: Automatic system preference detection
+- **PDF Upload**: Client-side PDF to text conversion
+- **File Processing**: Extract text from PDFs without server uploads
 
 ### Developer Experience
 - **Modular Architecture**: Clean separation of concerns
