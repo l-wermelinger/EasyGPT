@@ -35,6 +35,9 @@ class EasyAICore {
         this.loadChatHistory();
         this.setupPerformanceOptimizations();
         this.initSelfCleaningStorage();
+        
+        // Debug Puter status
+        this.checkPuterStatus();
     }
 
     setupPerformanceOptimizations() {
@@ -371,19 +374,44 @@ class EasyAICore {
             return newUserMessage;
         }
 
-        // Build context efficiently
+        // Build context efficiently with length limits
         const contextParts = ['Previous conversation:'];
+        const MAX_CONTEXT_LENGTH = 30000; // Conservative limit for context
+        const MAX_MESSAGE_LENGTH = 2000; // Max length per individual message in context
         
         // Only include last few messages for optimal performance
-        const recentHistory = this.chatHistory.slice(-10);
+        const recentHistory = this.chatHistory.slice(-5); // Reduced from 10 to 5
+        
+        console.log('🔍 Building context from', recentHistory.length, 'recent messages');
         
         for (const message of recentHistory) {
             const role = message.sender === 'user' ? 'User' : 'Assistant';
-            contextParts.push(`${role}: ${message.text}`);
+            
+            // Truncate individual messages if they're too long
+            let messageText = message.text;
+            if (messageText.length > MAX_MESSAGE_LENGTH) {
+                messageText = messageText.substring(0, MAX_MESSAGE_LENGTH) + '... [truncated]';
+                console.log(`📝 Truncated ${role} message from ${message.text.length} to ${messageText.length} chars`);
+            }
+            
+            const contextLine = `${role}: ${messageText}`;
+            
+            // Check if adding this message would exceed the context limit
+            const potentialContext = contextParts.join('\n') + '\n' + contextLine + `\n\nUser: ${newUserMessage}`;
+            if (potentialContext.length > MAX_CONTEXT_LENGTH) {
+                console.log('⚠️ Context would be too long, stopping here');
+                break;
+            }
+            
+            contextParts.push(contextLine);
         }
         
         contextParts.push(`\nUser: ${newUserMessage}`);
-        return contextParts.join('\n');
+        const finalContext = contextParts.join('\n');
+        
+        console.log('📊 Final context length:', finalContext.length, 'chars');
+        
+        return finalContext;
     }
 
     // High-performance streaming AI communication
@@ -398,50 +426,148 @@ class EasyAICore {
         this.saveChatMessage('user', userInput);
         
         try {
+            // Detailed debugging
+            console.log('🔍 Starting sendMessage debug...');
+            console.log('🔍 window.puter exists:', !!window.puter);
+            console.log('🔍 window.puter.ai exists:', !!(window.puter && window.puter.ai));
+            console.log('🔍 Current URL:', window.location.href);
+            console.log('🔍 Protocol:', window.location.protocol);
+            
+            // Check if Puter is available
+            if (!window.puter) {
+                console.error('❌ window.puter is not defined');
+                throw new Error('Puter.js library is not loaded. Please ensure the Puter script is included and the page is served over HTTPS.');
+            }
+
+            if (!window.puter.ai) {
+                console.error('❌ window.puter.ai is not defined');
+                console.log('🔍 Available puter properties:', Object.keys(window.puter));
+                throw new Error('Puter AI service is not available. Please check your internet connection and try again.');
+            }
+
             // Build context message
             const messageWithContext = this.buildContextMessage(userInput);
             
-            // Initialize streaming
-            const stream = await window.puter.ai.chat(messageWithContext, {
-                model: this.selectedModel,
-                stream: true
+            console.log('🤖 Sending message to AI:', { 
+                model: this.selectedModel, 
+                messageLength: messageWithContext.length,
+                puterAiType: typeof window.puter.ai.chat
             });
+
+            // Check if message is too long (Puter.js might have limits)
+            const MAX_MESSAGE_LENGTH = 50000; // Conservative limit
+            if (messageWithContext.length > MAX_MESSAGE_LENGTH) {
+                console.warn(`⚠️ Message too long (${messageWithContext.length} chars), truncating to ${MAX_MESSAGE_LENGTH} chars`);
+                const truncatedMessage = messageWithContext.substring(0, MAX_MESSAGE_LENGTH) + '\n\n[Message truncated due to length]';
+                console.log('📝 Using truncated message:', truncatedMessage.length, 'chars');
+            }
+
+            const finalMessage = messageWithContext.length > MAX_MESSAGE_LENGTH ? 
+                messageWithContext.substring(0, MAX_MESSAGE_LENGTH) + '\n\n[Message truncated due to length]' : 
+                messageWithContext;
+
+            // Initialize streaming with better error handling
+            let stream;
+            try {
+                console.log('🔄 Calling window.puter.ai.chat...');
+                stream = await window.puter.ai.chat(finalMessage, {
+                    model: this.selectedModel,
+                    stream: true
+                });
+                console.log('✅ Stream created successfully:', typeof stream);
+            } catch (apiError) {
+                console.error('❌ Puter API Error details:', {
+                    error: apiError,
+                    message: apiError.message,
+                    stack: apiError.stack,
+                    name: apiError.name,
+                    code: apiError.code,
+                    status: apiError.status,
+                    response: apiError.response,
+                    toString: apiError.toString()
+                });
+                
+                // Log the full error object
+                console.error('❌ Full error object:', apiError);
+                
+                // Try to extract more meaningful error information
+                let errorMessage = 'Unable to connect to AI service';
+                if (apiError.message) {
+                    errorMessage = apiError.message;
+                } else if (apiError.toString && typeof apiError.toString === 'function') {
+                    errorMessage = apiError.toString();
+                } else if (apiError.error && apiError.error.message) {
+                    errorMessage = apiError.error.message;
+                }
+                
+                throw new Error(`AI service error: ${errorMessage}`);
+            }
 
             let aiResponseText = '';
             let isFirstChunk = true;
+            let hasReceivedData = false;
 
             // Process stream with performance optimization
-            for await (const part of stream) {
-                if (part.error) {
-                    console.error(`AI Error:`, part.error);
-                    onError?.(part.error);
-                    break;
-                }
-
-                if (part.text) {
-                    aiResponseText += part.text;
+            try {
+                for await (const part of stream) {
+                    hasReceivedData = true;
                     
-                    // Throttled streaming updates for smooth performance
-                    if (isFirstChunk) {
-                        onStreamUpdate?.(aiResponseText, true); // First chunk
-                        isFirstChunk = false;
-                    } else {
-                        this.throttledStreamUpdate(aiResponseText, onStreamUpdate);
+                    if (part.error) {
+                        console.error(`AI Stream Error:`, part.error);
+                        onError?.(new Error(`AI Error: ${part.error}`));
+                        break;
+                    }
+
+                    if (part.text) {
+                        aiResponseText += part.text;
+                        
+                        // Throttled streaming updates for smooth performance
+                        if (isFirstChunk) {
+                            onStreamUpdate?.(aiResponseText, true); // First chunk
+                            isFirstChunk = false;
+                        } else {
+                            this.throttledStreamUpdate(aiResponseText, onStreamUpdate);
+                        }
                     }
                 }
+            } catch (streamError) {
+                console.error('Stream processing error:', streamError);
+                throw new Error(`Stream error: ${streamError.message || 'Failed to process AI response'}`);
+            }
+
+            // Check if we received any data
+            if (!hasReceivedData) {
+                throw new Error('No response received from AI service. Please try again.');
             }
 
             // Final update and save AI response
             if (aiResponseText.trim()) {
                 onStreamUpdate?.(aiResponseText, false, true); // Final update
                 this.saveChatMessage('ai', aiResponseText);
+                console.log('✅ AI response received and saved');
+            } else {
+                throw new Error('Empty response received from AI service.');
             }
 
             onComplete?.(aiResponseText);
 
         } catch (error) {
             console.error('AI Communication Error:', error);
-            onError?.(error);
+            
+            // Provide user-friendly error messages
+            let userMessage = 'Sorry, I encountered an error. Please try again.';
+            
+            if (error.message.includes('Puter.js library is not loaded')) {
+                userMessage = 'AI service is not available. Please refresh the page and ensure you have an internet connection.';
+            } else if (error.message.includes('AI service error')) {
+                userMessage = 'Unable to connect to AI service. Please check your internet connection and try again.';
+            } else if (error.message.includes('No response received')) {
+                userMessage = 'No response received from AI. Please try sending your message again.';
+            } else if (error.message.includes('Empty response')) {
+                userMessage = 'Received an empty response. Please try rephrasing your question.';
+            }
+            
+            onError?.(new Error(userMessage));
         } finally {
             this.isWaitingForAI = false;
         }
@@ -514,6 +640,29 @@ class EasyAICore {
             .replace(/<p>\s*<\/p>/g, '');
     }
 
+    // Debug function to check Puter status
+    checkPuterStatus() {
+        const status = {
+            puterLoaded: !!window.puter,
+            aiServiceAvailable: !!(window.puter && window.puter.ai),
+            currentUrl: window.location.href,
+            protocol: window.location.protocol,
+            isSecure: window.location.protocol === 'https:' || window.location.hostname === 'localhost'
+        };
+        
+        console.log('🔍 Puter Status Check:', status);
+        
+        if (!status.puterLoaded) {
+            console.warn('⚠️ Puter.js is not loaded. Check if the script tag is present and loading correctly.');
+        }
+        
+        if (!status.isSecure && window.location.hostname !== 'localhost') {
+            console.warn('⚠️ Puter.js requires HTTPS or localhost. Current protocol:', status.protocol);
+        }
+        
+        return status;
+    }
+
     // Performance monitoring with storage metrics
     getPerformanceMetrics() {
         const storageUsage = this.getStorageUsage();
@@ -530,6 +679,98 @@ class EasyAICore {
                 available: storageUsage.available
             }
         };
+    }
+
+    // Test function for debugging AI connection
+    async testAIConnection() {
+        console.log('🧪 Testing AI connection...');
+        
+        const status = this.checkPuterStatus();
+        if (!status.aiServiceAvailable) {
+            console.error('❌ AI service not available');
+            return false;
+        }
+
+        // Check authentication first
+        if (!window.puter.auth.isSignedIn()) {
+            console.warn('⚠️ User not authenticated, triggering sign-in...');
+            try {
+                await window.puter.auth.signIn();
+                console.log('✅ Authentication successful for test');
+            } catch (error) {
+                console.error('❌ Authentication failed during test:', error);
+                return false;
+            }
+        }
+        
+        try {
+            const testMessage = "Hello, this is a test message.";
+            console.log('📤 Sending test message:', testMessage);
+            
+            const stream = await window.puter.ai.chat(testMessage, {
+                model: this.selectedModel,
+                stream: true
+            });
+            
+            let response = '';
+            for await (const part of stream) {
+                if (part.error) {
+                    console.error('❌ Test failed with error:', part.error);
+                    return false;
+                }
+                if (part.text) {
+                    response += part.text;
+                }
+            }
+            
+            console.log('✅ Test successful! Response received:', response.substring(0, 100) + '...');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Test failed:', error);
+            return false;
+        }
+    }
+
+    // Test Puter authentication specifically
+    async testPuterAuth() {
+        console.log('🔐 Testing Puter authentication...');
+        
+        try {
+            // Check if Puter is loaded
+            if (!window.puter) {
+                console.error('❌ Puter not loaded');
+                return false;
+            }
+
+            // Check if auth service is available
+            if (!window.puter.auth) {
+                console.error('❌ Puter auth service not available');
+                return false;
+            }
+
+            // Check current authentication status
+            const isSignedIn = window.puter.auth.isSignedIn();
+            console.log('🔍 Current sign-in status:', isSignedIn);
+
+            if (isSignedIn) {
+                try {
+                    const user = await window.puter.auth.getUser();
+                    console.log('✅ User authenticated:', user.username);
+                    return true;
+                } catch (error) {
+                    console.error('❌ Failed to get user info:', error);
+                    return false;
+                }
+            } else {
+                console.log('ℹ️ User not signed in');
+                return false;
+            }
+
+        } catch (error) {
+            console.error('❌ Authentication test failed:', error);
+            return false;
+        }
     }
 
     // Cleanup on destroy

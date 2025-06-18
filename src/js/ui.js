@@ -33,8 +33,8 @@ class EasyAIUI {
             messageInput: document.getElementById('message-input'),
             sendButton: document.getElementById('send-button'),
             statusArea: document.getElementById('status-area'),
-            fileInput: document.getElementById('file-input'),
-            fileUploadButton: document.getElementById('file-upload-button')
+            fileUploadButton: document.getElementById('file-upload-button'),
+            fileInput: document.getElementById('file-input')
         };
 
         // Validate required elements
@@ -50,12 +50,6 @@ class EasyAIUI {
         // Send button
         this.elements.sendButton?.addEventListener('click', this.handleSendMessage.bind(this));
         
-        // File upload button
-        this.elements.fileUploadButton?.addEventListener('click', this.handleFileUploadClick.bind(this));
-        
-        // File input change
-        this.elements.fileInput?.addEventListener('change', this.handleFileSelect.bind(this));
-        
         // Enter key handling
         this.elements.messageInput?.addEventListener('keypress', (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
@@ -69,6 +63,10 @@ class EasyAIUI {
 
         // Simple scroll handling
         this.elements.chatMessages?.addEventListener('scroll', this.handleUserScroll.bind(this));
+
+        // File upload handling
+        this.elements.fileUploadButton?.addEventListener('click', this.handleFileUploadClick.bind(this));
+        this.elements.fileInput?.addEventListener('change', this.handleFileSelect.bind(this));
     }
 
     setupStorageMonitoring() {
@@ -269,136 +267,6 @@ class EasyAIUI {
         }
     }
 
-    // File Upload Handling
-    handleFileUploadClick() {
-        if (this.elements.fileInput) {
-            this.elements.fileInput.click();
-        }
-    }
-
-    async handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // Validate file type
-        if (file.type !== 'application/pdf') {
-            this.showStatus('Please select a PDF file.', 'error');
-            return;
-        }
-
-        // Validate file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.size > maxSize) {
-            this.showStatus('File size must be less than 10MB.', 'error');
-            return;
-        }
-
-        try {
-            // Show processing state
-            this.setFileUploadState(true);
-            this.showStatus('Processing PDF...', 'info');
-
-            // Extract text from PDF
-            const text = await this.extractTextFromPDF(file);
-            
-            if (!text || text.trim().length === 0) {
-                this.showStatus('No text found in PDF. The PDF might be image-based or encrypted.', 'error');
-                return;
-            }
-
-            // Add extracted text to input
-            const currentInput = this.elements.messageInput.value;
-            const separator = currentInput ? '\n\n' : '';
-            const pdfText = `📄 PDF Content:\n${text}`;
-            
-            this.elements.messageInput.value = currentInput + separator + pdfText;
-            this.handleInputResize();
-            
-            // Focus on input
-            this.elements.messageInput.focus();
-            
-            this.showStatus(`PDF processed successfully! ${text.length} characters extracted.`, 'success');
-            
-        } catch (error) {
-            console.error('PDF processing error:', error);
-            this.showStatus('Failed to process PDF. Please try again.', 'error');
-        } finally {
-            this.setFileUploadState(false);
-            // Clear file input
-            event.target.value = '';
-        }
-    }
-
-    async extractTextFromPDF(file) {
-        return new Promise((resolve, reject) => {
-            const fileReader = new FileReader();
-            
-            fileReader.onload = async function() {
-                try {
-                    // Configure PDF.js worker
-                    if (typeof pdfjsLib !== 'undefined') {
-                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                    }
-
-                    const typedarray = new Uint8Array(this.result);
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    
-                    let fullText = '';
-                    
-                    // Extract text from each page
-                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                        const page = await pdf.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-                        
-                        const pageText = textContent.items
-                            .map(item => item.str)
-                            .join(' ')
-                            .replace(/\s+/g, ' ')
-                            .trim();
-                        
-                        if (pageText) {
-                            fullText += `\n\nPage ${pageNum}:\n${pageText}`;
-                        }
-                    }
-                    
-                    resolve(fullText.trim());
-                    
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            
-            fileReader.onerror = () => reject(new Error('Failed to read file'));
-            fileReader.readAsArrayBuffer(file);
-        });
-    }
-
-    setFileUploadState(isProcessing) {
-        if (this.elements.fileUploadButton) {
-            this.elements.fileUploadButton.disabled = isProcessing;
-            if (isProcessing) {
-                this.elements.fileUploadButton.classList.add('processing');
-            } else {
-                this.elements.fileUploadButton.classList.remove('processing');
-            }
-        }
-    }
-
-    showStatus(message, type = 'info') {
-        if (!this.elements.statusArea) return;
-        
-        this.elements.statusArea.innerHTML = `<div class="status ${type}">${message}</div>`;
-        
-        // Auto-hide after 5 seconds for success/info messages
-        if (type === 'success' || type === 'info') {
-            setTimeout(() => {
-                if (this.elements.statusArea) {
-                    this.elements.statusArea.innerHTML = '';
-                }
-            }, 5000);
-        }
-    }
-
     // Simplified message creation
     addMessage(sender, text, isStreaming = false) {
         const messageElement = this.createMessageElement(sender, text, isStreaming);
@@ -537,6 +405,137 @@ class EasyAIUI {
         if (this.elements.chatMessages) {
             this.elements.chatMessages.appendChild(fragment);
             this.scrollToBottom();
+        }
+    }
+
+    // File Upload Handling
+    handleFileUploadClick() {
+        if (this.elements.fileInput) {
+            this.elements.fileInput.click();
+        }
+    }
+
+    async handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+            this.showStatus('Please select a PDF file.', 'error');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            this.showStatus('File size must be less than 10MB.', 'error');
+            return;
+        }
+
+        try {
+            // Show processing state
+            this.setFileUploadState(true);
+            this.showStatus('Processing PDF...', 'info');
+
+            // Extract text from PDF
+            const text = await this.extractTextFromPDF(file);
+            
+            if (!text || text.trim().length === 0) {
+                this.showStatus('No text found in PDF. The PDF might be image-based or encrypted.', 'error');
+                return;
+            }
+
+            // Add the extracted text to the input
+            const currentInput = this.elements.messageInput.value;
+            const separator = currentInput ? '\n\n' : '';
+            const pdfText = `📄 PDF Content (${file.name}):\n\n${text}`;
+            
+            this.elements.messageInput.value = currentInput + separator + pdfText;
+            this.handleInputResize();
+            
+            // Focus on input
+            this.elements.messageInput.focus();
+            
+            this.showStatus(`PDF processed successfully! ${text.length} characters extracted.`, 'success');
+            
+        } catch (error) {
+            console.error('PDF processing error:', error);
+            this.showStatus('Failed to process PDF. Please try again.', 'error');
+        } finally {
+            // Reset file input and state
+            event.target.value = '';
+            this.setFileUploadState(false);
+        }
+    }
+
+    async extractTextFromPDF(file) {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async function() {
+                try {
+                    // Configure PDF.js worker
+                    if (typeof pdfjsLib !== 'undefined') {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    }
+
+                    // Load PDF document
+                    const typedArray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                    
+                    let fullText = '';
+                    
+                    // Extract text from each page
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        
+                        // Combine text items with proper spacing
+                        const pageText = textContent.items
+                            .map(item => item.str)
+                            .join(' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                        
+                        if (pageText) {
+                            fullText += (fullText ? '\n\n' : '') + `Page ${pageNum}:\n${pageText}`;
+                        }
+                    }
+                    
+                    resolve(fullText);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            
+            fileReader.onerror = () => reject(new Error('Failed to read file'));
+            fileReader.readAsArrayBuffer(file);
+        });
+    }
+
+    setFileUploadState(isProcessing) {
+        if (this.elements.fileUploadButton) {
+            this.elements.fileUploadButton.disabled = isProcessing;
+            if (isProcessing) {
+                this.elements.fileUploadButton.classList.add('processing');
+            } else {
+                this.elements.fileUploadButton.classList.remove('processing');
+            }
+        }
+    }
+
+    showStatus(message, type = 'info') {
+        if (!this.elements.statusArea) return;
+        
+        this.elements.statusArea.innerHTML = `<div class="status ${type}">${message}</div>`;
+        
+        // Auto-hide status after 5 seconds for success/info messages
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                if (this.elements.statusArea) {
+                    this.elements.statusArea.innerHTML = '';
+                }
+            }, 5000);
         }
     }
 

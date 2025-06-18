@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Processing - EasyAI</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: white;
+            color: black;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: black;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .nav-link:hover {
+            color: #FF8C00;
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        .nav-link.active {
+            background: #FF8C00;
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+            background: linear-gradient(135deg, #FF8C00, #FF7F00);
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0.9;
+        }
+
+        /* Content Sections */
+        .content-section {
+            padding: 80px 0;
+        }
+
+        .content-section:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .content-section h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 60px;
+            color: black;
+        }
+
+        .pipeline-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .pipeline-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .pipeline-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pipeline-icon {
+            width: 60px;
+            height: 60px;
+            background: #FF8C00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-right: 30px;
+            flex-shrink: 0;
+        }
+
+        .demo-section {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b3);
+            padding: 60px;
+            border-radius: 16px;
+            margin: 60px 0;
+            text-align: center;
+        }
+
+        .demo-section h3 {
+            color: #FF8C00;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .demo-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .demo-button {
+            background: #FF8C00;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-button:hover {
+            background: #FF7F00;
+            transform: translateY(-2px);
+        }
+
+        .demo-output {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #FF8C00;
+            display: none;
+        }
+
+        .token-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .token {
+            background: #FF8C00;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 40px 30px;
+            background: white;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: #FF8C00;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: black;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .speed-bar {
+            width: 100%;
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .speed-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+
+        .speed-fast { background: #4caf50; }
+        .speed-medium { background: #ff9800; }
+        .speed-slow { background: #f44336; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .nav-menu {
+                justify-content: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
+            .hero h1 {
+                font-size: 2.5em;
+            }
+            
+            .hero p {
+                font-size: 1.1em;
+            }
+
+            .pipeline-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .pipeline-icon {
+                margin: 0 0 20px 0;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-section {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo-section">
+                    <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" fill="#FF8C00"/>
+                    </svg>
+                    <span class="logo-text">EasyAI</span>
+                </div>
+                <div class="nav-menu">
+                    <a href="../index.html" class="nav-link">Home</a>
+                    <a href="how-ai-works.html" class="nav-link">How AI Works</a>
+                    <a href="ai-processing.html" class="nav-link active">AI Processing</a>
+                    <a href="neural-networks.html" class="nav-link">Neural Networks</a>
+                    <a href="chat.html" class="nav-link">Chat</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>AI Processing</h1>
+            <p>Deep dive into how AI processes and understands information at lightning speed</p>
+        </div>
+    </section>
+
+    <!-- Processing Pipeline -->
+    <section class="content-section">
+        <div class="container">
+            <h2>The AI Processing Pipeline</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px; color: #666;">Understanding how AI transforms your input into meaningful responses</p>
+            
+            <div class="pipeline-grid">
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">📝</div>
+                    <div>
+                        <h3>Input Tokenization</h3>
+                        <p>Your text is broken down into smaller units called tokens - words, subwords, or characters that the AI can process mathematically.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">🔢</div>
+                    <div>
+                        <h3>Numerical Encoding</h3>
+                        <p>Each token is converted into numerical vectors (embeddings) that represent semantic meaning in high-dimensional space.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">🧠</div>
+                    <div>
+                        <h3>Attention Mechanism</h3>
+                        <p>The AI calculates attention weights to determine which parts of the input are most relevant for generating the response.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">⚡</div>
+                    <div>
+                        <h3>Parallel Processing</h3>
+                        <p>Multiple layers of neural networks process the information simultaneously, each extracting different patterns and features.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">🎯</div>
+                    <div>
+                        <h3>Response Generation</h3>
+                        <p>Based on learned patterns, the AI predicts the most likely next tokens to generate a coherent and relevant response.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo -->
+    <section class="content-section">
+        <div class="container">
+            <div class="demo-section">
+                <h3>Interactive Tokenization Demo</h3>
+                <p>Enter some text below to see how AI breaks it down into tokens:</p>
+                <input type="text" class="demo-input" id="tokenInput" placeholder="Enter text to tokenize..." value="Hello, how are you doing today?">
+                <br>
+                <button class="demo-button" onclick="demonstrateTokenization()">Tokenize Text</button>
+                <div class="demo-output" id="tokenOutput">
+                    <h4>Tokens:</h4>
+                    <div class="token-grid" id="tokenVisualization"></div>
+                    <p><strong>Token Count:</strong> <span id="tokenCount">0</span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Processing Speed -->
+    <section class="content-section">
+        <div class="container">
+            <h2>Processing Speed & Complexity</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px; color: #666;">Different types of AI processing have varying computational requirements</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3>Text Classification</h3>
+                    <p>Categorizing text into predefined classes</p>
+                    <div class="speed-bar">
+                        <div class="speed-fill speed-fast" style="width: 90%;"></div>
+                    </div>
+                    <small>Fast Processing</small>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">✍️</div>
+                    <h3>Text Generation</h3>
+                    <p>Creating new text based on context and prompts</p>
+                    <div class="speed-bar">
+                        <div class="speed-fill speed-medium" style="width: 70%;"></div>
+                    </div>
+                    <small>Medium Speed</small>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>Code Generation</h3>
+                    <p>Writing and debugging complex code structures</p>
+                    <div class="speed-bar">
+                        <div class="speed-fill speed-medium" style="width: 60%;"></div>
+                    </div>
+                    <small>Medium Speed</small>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤔</div>
+                    <h3>Complex Reasoning</h3>
+                    <p>Multi-step logical reasoning and problem solving</p>
+                    <div class="speed-bar">
+                        <div class="speed-fill speed-slow" style="width: 40%;"></div>
+                    </div>
+                    <small>Slower Processing</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EasyAI Advantages -->
+    <section class="content-section">
+        <div class="container">
+            <h2>EasyAI's Processing Advantages</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Direct API Calls</h3>
+                    <p>No middleware or server processing delays - direct communication with AI models</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <h3>Streaming Responses</h3>
+                    <p>Results appear as they're generated, not after completion</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Client-Side Optimization</h3>
+                    <p>Efficient DOM updates and smart memory management</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Smart Caching</h3>
+                    <p>Frequently used patterns are cached for faster access</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function demonstrateTokenization() {
+            const input = document.getElementById('tokenInput').value;
+            const output = document.getElementById('tokenOutput');
+            const visualization = document.getElementById('tokenVisualization');
+            const countElement = document.getElementById('tokenCount');
+            
+            if (!input.trim()) {
+                alert('Please enter some text to tokenize!');
+                return;
+            }
+            
+            // Simple tokenization simulation
+            const tokens = input.toLowerCase()
+                .replace(/[^\w\s]/g, ' $& ')
+                .split(/\s+/)
+                .filter(token => token.length > 0);
+            
+            visualization.innerHTML = '';
+            
+            tokens.forEach(token => {
+                const tokenElement = document.createElement('span');
+                tokenElement.className = 'token';
+                tokenElement.textContent = token;
+                visualization.appendChild(tokenElement);
+            });
+            
+            countElement.textContent = tokens.length;
+            output.style.display = 'block';
+        }
+        
+        window.addEventListener('load', () => {
+            demonstrateTokenization();
+        });
+    </script>
+</body>
+</html> 

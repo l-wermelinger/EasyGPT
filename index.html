@@ -59,22 +59,35 @@
             color: black;
         }
 
-        .nav-button {
-            background: #FF8C00;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
+        .nav-menu {
+            display: flex;
+            gap: 25px;
+            align-items: center;
         }
 
-        .nav-button:hover {
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .nav-link:hover {
+            color: #FF8C00;
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        .nav-link.cta {
+            background: #FF8C00;
+            color: white;
+        }
+
+        .nav-link.cta:hover {
             background: #FF7F00;
-            transform: translateY(-2px);
+            color: white;
         }
 
         /* Hero Section */
@@ -294,6 +307,23 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .nav-menu {
+                justify-content: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
             .hero h1 {
                 font-size: 2.5em;
             }
@@ -327,7 +357,12 @@
                     </svg>
                     <span class="logo-text">EasyAI</span>
                 </div>
-                <a href="src/chat.html" class="nav-button">Try Lightning Speed</a>
+                <div class="nav-menu">
+                    <a href="src/how-ai-works.html" class="nav-link">How AI Works</a>
+                    <a href="src/ai-processing.html" class="nav-link">AI Processing</a>
+                    <a href="src/neural-networks.html" class="nav-link">Neural Networks</a>
+                    <a href="src/chat.html" class="nav-link cta">Try Chat</a>
+                </div>
             </nav>
         </div>
     </header>
@@ -339,7 +374,7 @@
                 <div class="speed-badge">⚡ Zero Backend Delays</div>
                 <h1>Lightning Fast AI Chat<br><span class="hero-highlight">Direct Frontend Connection</span></h1>
                 <p>Experience the fastest AI responses possible with our direct frontend-to-AI architecture. No backend bottlenecks, no server delays - just pure speed.</p>
-                <a href="src/chat.html" class="cta-button">Experience Lightning Speed</a>
+                <a href="src/chat.html" class="cta-button">Try Lightning Speed Chat</a>
             </div>
         </div>
         

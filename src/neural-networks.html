@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Networks - EasyAI</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: white;
+            color: black;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: black;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .nav-link:hover {
+            color: #FF8C00;
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        .nav-link.active {
+            background: #FF8C00;
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+            background: linear-gradient(135deg, #FF8C00, #FF7F00);
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0.9;
+        }
+
+        /* Content Sections */
+        .content-section {
+            padding: 80px 0;
+        }
+
+        .content-section:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .content-section h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 60px;
+            color: black;
+        }
+
+        .pipeline-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .pipeline-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .pipeline-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pipeline-icon {
+            width: 60px;
+            height: 60px;
+            background: #FF8C00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-right: 30px;
+            flex-shrink: 0;
+        }
+
+        .demo-section {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b3);
+            padding: 60px;
+            border-radius: 16px;
+            margin: 60px 0;
+            text-align: center;
+        }
+
+        .demo-section h3 {
+            color: #FF8C00;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .demo-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .demo-button {
+            background: #FF8C00;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-button:hover {
+            background: #FF7F00;
+            transform: translateY(-2px);
+        }
+
+        .demo-output {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #FF8C00;
+            display: none;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 40px 30px;
+            background: white;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: #FF8C00;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: black;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .neural-network-visual {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 60px 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 16px;
+            overflow-x: auto;
+        }
+
+        .layer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .layer-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #FF8C00;
+            font-size: 1.1em;
+        }
+
+        .neurons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .neuron {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #FF8C00;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connection {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(to right, #ddd, #FF8C00, #ddd);
+            margin: 0 15px;
+            position: relative;
+            top: 50%;
+        }
+
+        .activation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .activation-btn {
+            background: #FF8C00;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .activation-btn:hover {
+            background: #FF7F00;
+            transform: scale(1.05);
+        }
+
+        .activation-btn.active {
+            background: #333;
+        }
+
+        .function-graph {
+            width: 100%;
+            max-width: 500px;
+            height: 250px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .nav-menu {
+                justify-content: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
+            .hero h1 {
+                font-size: 2.5em;
+            }
+            
+            .hero p {
+                font-size: 1.1em;
+            }
+
+            .pipeline-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .pipeline-icon {
+                margin: 0 0 20px 0;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-section {
+                padding: 40px 20px;
+            }
+
+            .neural-network-visual {
+                flex-direction: column;
+                gap: 20px;
+                padding: 30px 20px;
+            }
+
+            .connection {
+                width: 2px;
+                height: 30px;
+                margin: 10px 0;
+            }
+
+            .activation-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo-section">
+                    <svg class="logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" fill="#FF8C00"/>
+                    </svg>
+                    <span class="logo-text">EasyAI</span>
+                </div>
+                <div class="nav-menu">
+                    <a href="../index.html" class="nav-link">Home</a>
+                    <a href="how-ai-works.html" class="nav-link">How AI Works</a>
+                    <a href="ai-processing.html" class="nav-link">AI Processing</a>
+                    <a href="neural-networks.html" class="nav-link active">Neural Networks</a>
+                    <a href="chat.html" class="nav-link">Chat</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Neural Networks</h1>
+            <p>Exploring the brain-inspired architecture that powers modern AI systems</p>
+        </div>
+    </section>
+
+    <!-- What are Neural Networks -->
+    <section class="content-section">
+        <div class="container">
+            <h2>What are Neural Networks?</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px; color: #666;">Neural networks are computing systems inspired by biological neural networks, consisting of interconnected nodes that process information.</p>
+            
+            <div class="neural-network-visual">
+                <div class="layer">
+                    <div class="layer-title">Input Layer</div>
+                    <div class="neurons">
+                        <div class="neuron" title="Input neuron 1"></div>
+                        <div class="neuron" title="Input neuron 2"></div>
+                        <div class="neuron" title="Input neuron 3"></div>
+                    </div>
+                </div>
+                <div class="connection"></div>
+                <div class="layer">
+                    <div class="layer-title">Hidden Layer</div>
+                    <div class="neurons">
+                        <div class="neuron" title="Hidden neuron 1"></div>
+                        <div class="neuron" title="Hidden neuron 2"></div>
+                        <div class="neuron" title="Hidden neuron 3"></div>
+                        <div class="neuron" title="Hidden neuron 4"></div>
+                    </div>
+                </div>
+                <div class="connection"></div>
+                <div class="layer">
+                    <div class="layer-title">Output Layer</div>
+                    <div class="neurons">
+                        <div class="neuron" title="Output neuron 1"></div>
+                        <div class="neuron" title="Output neuron 2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How Neural Networks Learn -->
+    <section class="content-section">
+        <div class="container">
+            <h2>How Neural Networks Learn</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px; color: #666;">The learning process through backpropagation and gradient descent</p>
+            
+            <div class="pipeline-grid">
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">→</div>
+                    <div>
+                        <h3>Forward Pass</h3>
+                        <p>Input data flows through the network layers, with each neuron applying weights and activation functions to produce an output.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">📊</div>
+                    <div>
+                        <h3>Loss Calculation</h3>
+                        <p>The difference between the predicted output and the actual target is calculated using a loss function.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">←</div>
+                    <div>
+                        <h3>Backward Pass</h3>
+                        <p>Error signals are propagated backward through the network to determine how much each weight contributed to the error.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">⚖️</div>
+                    <div>
+                        <h3>Weight Update</h3>
+                        <p>Connection weights are adjusted using gradient descent to minimize the loss function and improve predictions.</p>
+                    </div>
+                </div>
+                
+                <div class="pipeline-card">
+                    <div class="pipeline-icon">🔄</div>
+                    <div>
+                        <h3>Iteration</h3>
+                        <p>This process repeats thousands of times across many training examples until the network learns the patterns.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Activation Functions Demo -->
+    <section class="content-section">
+        <div class="container">
+            <div class="demo-section">
+                <h3>Activation Functions</h3>
+                <p>Activation functions determine whether a neuron should be activated, introducing non-linearity into the network.</p>
+                
+                <div class="activation-buttons">
+                    <button class="activation-btn active" onclick="showActivation('relu')">ReLU</button>
+                    <button class="activation-btn" onclick="showActivation('sigmoid')">Sigmoid</button>
+                    <button class="activation-btn" onclick="showActivation('tanh')">Tanh</button>
+                    <button class="activation-btn" onclick="showActivation('linear')">Linear</button>
+                </div>
+                
+                <div class="function-graph" id="functionGraph">
+                    <canvas id="activationCanvas" width="500" height="250"></canvas>
+                </div>
+                
+                <div class="demo-output" id="activationInfo" style="display: block;">
+                    <h4 id="functionName">ReLU (Rectified Linear Unit)</h4>
+                    <p id="functionDescription">ReLU outputs the input directly if positive, otherwise outputs zero. It\'s the most commonly used activation function in deep learning due to its simplicity and effectiveness.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Types of Neural Networks -->
+    <section class="content-section">
+        <div class="container">
+            <h2>Types of Neural Networks</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">→</div>
+                    <h3>Feedforward Networks</h3>
+                    <p>Information flows in one direction from input to output. Great for basic classification and regression tasks.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">↻</div>
+                    <h3>Recurrent Networks (RNN)</h3>
+                    <p>Can process sequences of data by maintaining memory of previous inputs. Used for time series and language tasks.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>Convolutional Networks (CNN)</h3>
+                    <p>Specialized for processing grid-like data such as images. Excellent for computer vision tasks.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Transformer Networks</h3>
+                    <p>Use attention mechanisms to process sequences in parallel. The foundation of modern language models like GPT.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modern Applications -->
+    <section class="content-section">
+        <div class="container">
+            <h2>Modern Applications</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px; color: #666;">How neural networks are transforming various industries</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🗣️</div>
+                    <h3>Language Models</h3>
+                    <p>Large transformer networks power chatbots, translation services, and content generation tools like EasyAI.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Image Generation</h3>
+                    <p>Generative adversarial networks (GANs) and diffusion models create realistic images from text descriptions.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🚗</div>
+                    <h3>Autonomous Vehicles</h3>
+                    <p>Convolutional networks process camera feeds to enable self-driving car navigation and object detection.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🧬</div>
+                    <h3>Drug Discovery</h3>
+                    <p>Neural networks analyze molecular structures to predict drug interactions and accelerate pharmaceutical research.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        let currentActivation = 'relu';
+        
+        function showActivation(type) {
+            currentActivation = type;
+            
+            // Update button states
+            document.querySelectorAll('.activation-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update function info
+            const functionName = document.getElementById('functionName');
+            const functionDescription = document.getElementById('functionDescription');
+            
+            const activationInfo = {
+                relu: {
+                    name: 'ReLU (Rectified Linear Unit)',
+                    description: 'ReLU outputs the input directly if positive, otherwise outputs zero. It\'s the most commonly used activation function in deep learning due to its simplicity and effectiveness.'
+                },
+                sigmoid: {
+                    name: 'Sigmoid Function',
+                    description: 'Sigmoid maps any input to a value between 0 and 1, making it useful for binary classification. However, it can suffer from vanishing gradient problems.'
+                },
+                tanh: {
+                    name: 'Hyperbolic Tangent (Tanh)',
+                    description: 'Tanh maps inputs to values between -1 and 1. It\'s zero-centered, which can help with training, but also suffers from vanishing gradients.'
+                },
+                linear: {
+                    name: 'Linear Function',
+                    description: 'Linear activation simply outputs the input unchanged. Used in output layers for regression tasks where you need unbounded outputs.'
+                }
+            };
+            
+            functionName.textContent = activationInfo[type].name;
+            functionDescription.textContent = activationInfo[type].description;
+            
+            // Draw the graph
+            drawActivationFunction(type);
+        }
+        
+        function drawActivationFunction(type) {
+            const canvas = document.getElementById('activationCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Set up coordinate system
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 40;
+            
+            // Draw axes
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+            
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+            
+            // Draw function
+            ctx.strokeStyle = '#FF8C00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            for (let x = -canvas.width/2; x < canvas.width/2; x += 1) {
+                const inputX = x / scale;
+                let outputY;
+                
+                switch(type) {
+                    case 'relu':
+                        outputY = Math.max(0, inputX);
+                        break;
+                    case 'sigmoid':
+                        outputY = 1 / (1 + Math.exp(-inputX));
+                        break;
+                    case 'tanh':
+                        outputY = Math.tanh(inputX);
+                        break;
+                    case 'linear':
+                        outputY = inputX;
+                        break;
+                }
+                
+                const canvasX = x + centerX;
+                const canvasY = centerY - (outputY * scale);
+                
+                if (x === -canvas.width/2) {
+                    ctx.moveTo(canvasX, canvasY);
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+            
+            ctx.stroke();
+            
+            // Add labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.fillText('Input', canvas.width - 30, centerY + 15);
+            ctx.fillText('Output', centerX + 5, 15);
+        }
+        
+        // Initialize with ReLU
+        window.addEventListener('load', () => {
+            drawActivationFunction('relu');
+        });
+    </script>
+</body>
+</html> 

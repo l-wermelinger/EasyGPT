@@ -32,6 +32,17 @@
 </head>
 <body>
     <div class="chat-container">
+        <!-- Navigation -->
+        <nav style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 15px 0; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; position: sticky; top: 0; z-index: 100;">
+            <div style="display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; align-items: center;">
+                <a href="../index.html" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.3s ease; font-size: 15px;" onmouseover="this.style.background='rgba(255, 140, 0, 0.1)'; this.style.color='#FF8C00';" onmouseout="this.style.background=''; this.style.color='#333';">Home</a>
+                <a href="how-ai-works.html" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.3s ease; font-size: 15px;" onmouseover="this.style.background='rgba(255, 140, 0, 0.1)'; this.style.color='#FF8C00';" onmouseout="this.style.background=''; this.style.color='#333';">How AI Works</a>
+                <a href="ai-processing.html" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.3s ease; font-size: 15px;" onmouseover="this.style.background='rgba(255, 140, 0, 0.1)'; this.style.color='#FF8C00';" onmouseout="this.style.background=''; this.style.color='#333';">AI Processing</a>
+                <a href="neural-networks.html" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.3s ease; font-size: 15px;" onmouseover="this.style.background='rgba(255, 140, 0, 0.1)'; this.style.color='#FF8C00';" onmouseout="this.style.background=''; this.style.color='#333';">Neural Networks</a>
+                <a href="chat.html" style="background: #FF8C00; color: white; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 4px; transition: all 0.3s ease; font-size: 15px;" onmouseover="this.style.background='#FF7F00';" onmouseout="this.style.background='#FF8C00';">Chat</a>
+            </div>
+        </nav>
+
         <!-- Header -->
         <header class="header">
             <h1>
@@ -56,6 +67,30 @@
 
         <!-- Input Area -->
         <footer class="input-area">
+            <div class="input-controls">
+                <button 
+                    id="file-upload-button" 
+                    class="file-upload-button" 
+                    type="button"
+                    aria-label="Upload PDF file"
+                    title="Upload PDF file"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                    </svg>
+                </button>
+                <input 
+                    type="file" 
+                    id="file-input" 
+                    accept=".pdf"
+                    style="display: none;"
+                    aria-label="Select PDF file"
+                />
+            </div>
             <textarea 
                 id="message-input" 
                 class="message-input" 
@@ -65,28 +100,6 @@
                 autocomplete="off"
                 spellcheck="true"
             ></textarea>
-            <input 
-                type="file" 
-                id="file-input" 
-                accept=".pdf"
-                style="display: none;"
-                aria-label="Upload PDF file"
-            >
-            <button 
-                id="file-upload-button" 
-                class="file-upload-button" 
-                type="button"
-                aria-label="Upload PDF file"
-                title="Upload PDF file to extract text"
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14,2 14,8 20,8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <polyline points="10,9 9,9 8,9"/>
-                </svg>
-            </button>
             <button 
                 id="send-button" 
                 class="send-button" 

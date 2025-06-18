@@ -431,56 +431,66 @@ body {
 }
 
 /* File Upload Button */
+.input-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
 .file-upload-button {
-    min-width: 50px;
-    height: 50px;
-    background: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-weight: 600;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--background-primary);
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    align-self: flex-end;
-    box-shadow: var(--shadow-medium);
-    font-size: 18px;
+    transition: all var(--transition-fast);
     position: relative;
-    margin-right: 10px;
-}
-
-.file-upload-button svg {
-    width: 20px;
-    height: 20px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-light);
 }
 
 .file-upload-button:hover:not(:disabled) {
-    background: #5a6268;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-heavy);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(255, 140, 0, 0.05);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-medium);
 }
 
 .file-upload-button:active {
     transform: translateY(0);
+    box-shadow: var(--shadow-light);
 }
 
 .file-upload-button:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
 }
 
+.file-upload-button svg {
+    transition: transform var(--transition-fast);
+}
+
+.file-upload-button:hover:not(:disabled) svg {
+    transform: scale(1.1);
+}
+
 .file-upload-button.processing {
-    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
     animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    50% { opacity: 0.6; }
 }
 
 /* Status Area - Fixed Height */
@@ -554,9 +564,8 @@ body {
     }
     
     .file-upload-button {
-        min-width: 44px;
-        height: 44px;
-        margin-right: 8px;
+        width: 40px;
+        height: 40px;
     }
 }
 
@@ -603,9 +612,8 @@ body {
     }
     
     .file-upload-button {
-        min-width: 40px;
-        height: 40px;
-        margin-right: 6px;
+        width: 36px;
+        height: 36px;
     }
 }
 
